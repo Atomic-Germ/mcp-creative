@@ -24,7 +24,8 @@ let lastMeditation: MeditationState | null = null;
 let lastInsight: InsightState | null = null;
 
 // Word corpus for random generation
-const RANDOM_WORDS = [
+// Organized into loose thematic pools to encourage strange collisions.
+const ABSTRACT_CORE = [
   "quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer",
   "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony",
   "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence",
@@ -35,10 +36,65 @@ const RANDOM_WORDS = [
   "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction"
 ];
 
+const MUNDANE_OBJECTS = [
+  "spoon", "doorknob", "elevator", "receipt", "coffee", "pillow", "staircase",
+  "notebook", "window", "backpack", "umbrella", "remote", "toothbrush", "headphones",
+  "coin", "ticket", "keyboard", "mirror", "towel", "lamp", "chair", "socket",
+  "cable", "battery", "cup", "plate", "bus", "train", "pavement", "thumbnail"
+];
+
+const GLITCH_TECH = [
+  "packet", "latency", "buffer", "segfault", "kernel", "cursor", "firmware",
+  "console", "cache", "syntax", "runtime", "daemon", "socket", "protocol",
+  "hash", "opcode", "allocator", "heap", "pointer", "overflow", "underflow",
+  "checksum", "iterator", "sandbox", "container", "pipeline", "nanosecond"
+];
+
+const BIZARRE_ACTIONS = [
+  "melts", "oscillates", "bleeds", "flickers", "loops", "spills", "dissolves",
+  "folds", "reboots", "mutates", "echoes", "sprawls", "glitches", "stutters",
+  "sprawls", "drifts", "erases", "splices", "reverses", "decompresses", "encrypts",
+  "scrambles", "shears", "fractures", "remixes"
+];
+
+const EMOTIONS = [
+  "longing", "quiet-joy", "melancholy", "irritation", "awe", "tension", "relief",
+  "nostalgia", "anticipation", "dread", "gratitude", "tenderness", "restlessness",
+  "confusion", "clarity", "euphoria", "weariness", "curiosity"
+];
+
+const PLACE_FRAGMENTS = [
+  "corridor", "rooftop", "subway", "waiting-room", "server-room", "attic",
+  "crosswalk", "forest-edge", "parking-lot", "kitchen-sink", "airport-gate",
+  "empty-theatre", "hotel-lobby", "data-center", "hinterland", "harbor"
+];
+
+const NUMBER_STRINGS = [
+  "4183", "0000", "13", "1010", "404", "3.1415", "0xDEAD", "2049", "∞",
+  "11:11", "7e3", "001101", "5/8", "9.81"
+];
+
+const SYMBOL_NOISE = [
+  "#?", "∴", "≈", "/dev/null", "::*", "//TODO", "#!", "{ }", "<>", "⁂",
+  "^Z", "ctrl-c", "%TEMP%", "~/", "ψ", "∆", "★", "☍"
+];
+
+const RANDOM_POOLS: string[][] = [
+  ABSTRACT_CORE,
+  MUNDANE_OBJECTS,
+  GLITCH_TECH,
+  BIZARRE_ACTIONS,
+  EMOTIONS,
+  PLACE_FRAGMENTS,
+  NUMBER_STRINGS,
+  SYMBOL_NOISE,
+];
+
 function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
-    words.push(RANDOM_WORDS[Math.floor(randomFn() * RANDOM_WORDS.length)]);
+    const pool = RANDOM_POOLS[Math.floor(randomFn() * RANDOM_POOLS.length)];
+    words.push(pool[Math.floor(randomFn() * pool.length)]);
   }
   return words;
 }
@@ -60,23 +116,34 @@ function generatePseudoRandomSeed(): string {
 
 function attemptSentenceFormation(randomWords: string[], contextWords: string[]): string | null {
   const allWords = [...randomWords, ...contextWords];
-  
-  // Shuffle and attempt to form a syntactically valid sentence
-  const shuffled = allWords.sort(() => Math.random() - 0.5);
-  
-  // Simple heuristic: if we have at least 5 words, try to form a sentence
-  if (shuffled.length >= 5) {
-    // Capitalize first word and add period
-    const sentence = shuffled.slice(0, Math.min(10, shuffled.length))
+  if (allWords.length === 0) return null;
+
+  const pick = (): string => allWords[Math.floor(Math.random() * allWords.length)];
+
+  const sentenceTemplates = [
+    () => `Between ${pick()} and ${pick()}, ${pick()} ${pick()} around ${pick()}.`,
+    () => `${pick()} drifts through ${pick()}, annotated by ${pick()} and forgotten ${pick()}.`,
+    () => `In the corridor between ${pick()} and ${pick()}, ${pick()} quietly ${pick()}.`,
+    () => `${pick()} remembers ${pick()} while ${pick()} glitches beside ${pick()}.`,
+    () => `${pick()} is a note scribbled in the margin of ${pick()} ${pick()}.`,
+  ];
+
+  // 50% of the time, use a structured but surreal template.
+  if (allWords.length >= 4 && Math.random() < 0.5) {
+    const template = sentenceTemplates[Math.floor(Math.random() * sentenceTemplates.length)];
+    return template();
+  }
+
+  // Fallback: shuffled fragment chain.
+  const shuffled = [...allWords].sort(() => Math.random() - 0.5);
+  if (shuffled.length >= 3) {
+    const maxWords = Math.min(14, shuffled.length);
+    const sentence = shuffled.slice(0, maxWords)
       .map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w)
       .join(" ") + ".";
-    
-    // Check if it seems valid (has some structure)
-    if (sentence.split(" ").length >= 5) {
-      return sentence;
-    }
+    return sentence;
   }
-  
+
   return null;
 }
 
@@ -205,7 +272,23 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       }
 
       // Interpret the emergent sentence
-      const interpretation = `From the interplay of random (${randomWords.slice(0, 5).join(", ")}...) and contextual elements (${contextWords.join(", ") || "none"}), emerges: "${emergentSentence}"\n\nThis synthesis suggests a contemplation on ${emergentSentence.toLowerCase().includes("void") ? "emptiness and potential" : emergentSentence.toLowerCase().includes("resonance") ? "harmonic connections" : "emergent patterns"}. The meditation reveals how ${contextWords.length > 0 ? "structured intention" : "pure chaos"} interacts with randomness to birth meaning.`;
+      const sampleRandom = randomWords.slice(0, 7).join(", ");
+      const hasDigitsOrSymbols = randomWords.some(w => /[0-9#%&@/\\_*<>]/.test(w));
+      const baseTheme = emergentSentence.toLowerCase().includes("void")
+        ? "emptiness and potential"
+        : emergentSentence.toLowerCase().includes("resonance")
+        ? "harmonic connections"
+        : "emergent patterns";
+
+      const noiseComment = hasDigitsOrSymbols
+        ? "The field is saturated with near-pure ciphertext: digits, symbols, and glitches that refuse single meanings."
+        : "The field leans more toward verbal imagery than raw noise, inviting slower decoding.";
+
+      const keyComment = contextWords.length > 0
+        ? "Your supplied context behaves like a partial decryption key, subtly biasing the hallucinated meaning."
+        : "With no explicit context, the system treats noise itself as both cipher and key, inventing structure on the fly.";
+
+      const interpretation = `From the interplay of random (${sampleRandom}...) and contextual elements (${contextWords.join(", ") || "none"}), emerges: "${emergentSentence}"\n\nThis synthesis suggests a contemplation on ${baseTheme}. ${noiseComment} ${keyComment} Each pass over the same seed could decode a different story from the same underlying scramble.`;
 
       lastMeditation = {
         randomWords,
