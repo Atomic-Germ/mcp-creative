@@ -9,7 +9,7 @@ on:
 jobs:
   Test:
 
-    runs-on: fedora-latest
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
