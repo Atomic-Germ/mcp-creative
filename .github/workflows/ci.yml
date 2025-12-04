@@ -15,6 +15,7 @@ jobs:
       matrix:
         node-version: [18.x, 20.x, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        cache: "npm"
 
     steps:
     - uses: actions/checkout@v4
@@ -23,6 +24,5 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-    - run: apt install pnpm -y
-    - run: pnpm i
-    - run: pnpm test
+    - run: npm i
+    - run: npm test
