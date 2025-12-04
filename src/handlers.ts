@@ -35,12 +35,21 @@ const RANDOM_WORDS = [
   "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction"
 ];
 
-function generateRandomWords(count: number): string[] {
+function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
-    words.push(RANDOM_WORDS[Math.floor(Math.random() * RANDOM_WORDS.length)]);
+    words.push(RANDOM_WORDS[Math.floor(randomFn() * RANDOM_WORDS.length)]);
   }
   return words;
+}
+
+function createSeededRandom(seed: string): () => number {
+  let state = seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  if (state === 0) state = 1;
+  return () => {
+    state = (state * 1664525 + 1013904223) % 0x100000000;
+    return state / 0x100000000;
+  };
 }
 
 function generatePseudoRandomSeed(): string {
@@ -174,21 +183,8 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const contextWords = (args?.context_words as string[]) || [];
       const numRandomWords = (args?.num_random_words as number) || 12;
       const seed = args?.seed as string | undefined;
-
-      // Generate random words with optional seed influence
-      if (seed) {
-        // Use seed to influence randomness (simple hash-based approach)
-        const seedNum = seed.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        Math.random = (() => {
-          let x = Math.sin(seedNum) * 10000;
-          return () => {
-            x = Math.sin(x) * 10000;
-            return x - Math.floor(x);
-          };
-        })();
-      }
-
-      const randomWords = generateRandomWords(numRandomWords);
+      const randomFn = seed ? createSeededRandom(seed) : Math.random;
+      const randomWords = generateRandomWords(numRandomWords, randomFn);
       
       // Attempt to form a meaningful sentence
       let emergentSentence: string | null = null;
@@ -199,7 +195,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
         emergentSentence = attemptSentenceFormation(randomWords, contextWords);
         if (!emergentSentence) {
           // Add more random words and try again
-          randomWords.push(...generateRandomWords(3));
+          randomWords.push(...generateRandomWords(3, randomFn));
           attempts++;
         }
       }
