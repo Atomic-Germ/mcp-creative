@@ -12,7 +12,7 @@
     "dev:demo": "ts-node src/demo-client.ts",
     "test": "vitest run --reporter default",
     "test:watch": "vitest",
-    "ci": "pnpm install && pnpm build && pnpm test"
+    "ci": "npm i && npm build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",

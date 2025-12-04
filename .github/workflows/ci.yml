@@ -1,4 +1,4 @@
-name: Test & Build
+name: Regression Test
 
 on:
   push:
@@ -13,8 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
 
-    - run: npm run ci
+    - uses: actions/setup-node@v4
+    
+    - run: npm ci
