@@ -25,6 +25,7 @@ let lastInsight: InsightState | null = null;
 
 // Word corpus for random generation
 const RANDOM_WORDS = [
+// Abstract/Technical (original style but expanded)
   "quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer",
   "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony",
   "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence",
@@ -32,7 +33,130 @@ const RANDOM_WORDS = [
   "membrane", "substrate", "lattice", "matrix", "dimension", "singularity",
   "cascade", "ripple", "vortex", "prism", "spectrum", "wavelength", "frequency",
   "amplitude", "phase", "coherence", "interference", "superposition", "entanglement",
-  "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction"
+  "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction",
+  "manifold", "tensor", "isomorphism", "cryptography", "algorithm", "heuristic",
+  "recursive", "asynchronous", "latency", "bandwidth", "payload", "middleware",
+  "differential", "cohomology", "fibration", "functor", "monad", "adjunction",
+  "equivariant", "holonomic", "microsupport", "ramification", "filtration", "stratification",
+  
+  // Mundane Everyday Objects
+  "spoon", "sock", "toothbrush", "paperclip", "rubberband", "binder", "stapler",
+  "mug", "key", "doormat", "lightbulb", "batteries", "remote", "penny", "envelope",
+  "button", "zipper", "cork", "sponge", "tupperware", "coaster", "dustpan", "clothespin",
+  "extension cord", "air freshener", "candle", "mousetrap", "lunchbox", "water bottle",
+  "umbrella", "shopping cart", "traffic cone", "parking meter", "manhole cover", "gutter",
+  
+  // Corporate/Bureaucratic
+  "synergy", "leverage", "paradigm", "stakeholder", "deliverable", "actionable",
+  "bandwidth", "drilldown", "ping", "circle back", "touch base", "move the needle",
+  "boil the ocean", "synergize", "optimize", "streamline", "disrupt", "pivot",
+  "scalability", "ROI", "KPI", "compliance", "audit", "liability", "fiduciary",
+  "escalation", "touchpoint", "mindshare", "value-add", "low-hanging fruit",
+  
+  // Internet/Digital Culture
+  "meme", "viral", "hashtag", "algorithm", "bot", "troll", "stream", "content",
+  "influencer", "engagement", "clickbait", "SEO", "cookie", "cache", "404",
+  "unplugged", "digital detox", "FOMO", "TL;DR", "DM", "AMA", "NSFW", "IRL",
+  "meta", "cringe", "based", "ratio", "main character", "vibe check", "touch grass",
+
+  // Biological/Medical
+  "mitochondria", "ribosome", "telomere", "apoptosis", "homeostasis", "neuroplasticity",
+  "microbiome", "phagocytosis", "cytokine", "antigen", "pathogen", "antibody",
+  "placebo", "side effect", "copay", "deductible", "referral", "waiting room",
+  "band-aid", "syringe", "catheter", "biopsy", "anesthesia", "post-op", "vein",
+  "toenail", "earwax", "fingernail", "belly button", "armpit", "kneecap",
+  
+  // Emotional/Psychological
+  "ennui", "weltschmerz", "sonder", "monachopsis", "exulansis", "anemoia",
+  "occhiolism", "altschmerz", "lachesism", "rubatosis", "kuebiko", "liberosis",
+  "anxiety", "dread", "malaise", "apathy", "nostalgia", "bittersweet", "melancholy",
+  "overwhelm", "burnout", "imposter syndrome", "cognitive dissonance", "projection",
+  "deflection", "passive aggressive", "trauma dump", "toxic positivity", "boundaries",
+  
+  // Food & Consumables
+  "mayonnaise", "ketchup", "relish", "mustard", "pickle", "tater tot", "hot dog",
+  "instant noodles", "frozen pizza", "cereal", "milk", "bread", "butter", "eggs",
+  "coffee", "energy drink", "protein bar", "gummy vitamins", "leftovers", "condiment",
+  "sauce packet", "flavor dust", "cheese dust", "bone broth", "plant-based", "artisanal",
+  "craft", "small batch", "single origin", "gluten-free", "keto-friendly", "organic",
+  
+  // Financial/Economic
+  "inflation", "deflation", "stagflation", "recession", "depression", "bull market",
+  "bear market", "cryptocurrency", "NFT", "blockchain", "liquidity", "margin call",
+  "short squeeze", "diversification", "portfolio", "amortization", "depreciation",
+  "tax shelter", "deduction", "withholding", "compound interest", "opportunity cost",
+  
+  // Legal/Governmental
+  "jurisdiction", "precedent", "subpoena", "affidavit", "deposition", "litigation",
+  "tort", "negligence", "eminent domain", "bureaucracy", "red tape", "loophole",
+  "statute", "ordinance", "permit", "compliance", "regulation", "audit", "waiver",
+  "disclaimer", "terms of service", "privacy policy", "NDA", "force majeure",
+
+  // Pop Culture
+  "butterfly effect", "red pill", "blue pill", "force", "lightsaber", "TARDIS",
+  "sonic screwdriver", "infinity stone", "demogorgon", "upsidedown", "muggle",
+  "squib", "horcrux", "parseltongue", "mandalorian", "droid", "wookie", "jedi",
+  "sith", "replicant", "blade runner", "tyrell corporation", "weyland-yutani",
+  
+  // Body Parts & Functions
+  "elbow", "kneecap", "earlobe", "nostril", "cuticle", "follicle", "taste bud",
+  "uvula", "appendix", "pancreas", "spleen", "gallbladder", "bile duct",
+  "hiccup", "sneeze", "cough", "yawn", "snore", "burp", "fart", "blush", "sweat",
+  "goosebumps", "hangnail", "callus", "corn", "bunion", "wart", "mole", "freckle",
+  
+  // Random Verbs
+  "transmogrify", "defenestrate", "obfuscate", "concatenate", "discombobulate",
+  "flabbergast", "bamboozle", "hornswoggle", "skedaddle", "absquatulate",
+  "click", "scroll", "swipe", "tap", "pinch", "zoom", "drag", "drop", "toggle",
+  "reboot", "refresh", "clear cache", "force quit", "task kill", "unplug", "reboot",
+  
+  // Random Adjectives
+  "gargantuan", "infinitesimal", "sesquipedalian", "pulchritudinous", "lugubrious",
+  "mellifluous", "obsequious", "perspicacious", "quixotic", "sanguine",
+  "janky", "busted", "wonky", "funky", "sketchy", "dodgy", "sus", "cringe", "mid",
+  "basic", "extra", "slay", "lit", "fire", "dope", "sick", "tight", "gucci", "bougie",
+  
+  // Geographical/Natural (Mundane)
+  "cul-de-sac", "intersection", "overpass", "underpass", "roundabout", "dead end",
+  "pothole", "speed bump", "median strip", "drainage ditch", "retention pond", "sewer",
+  "landfill", "recycling bin", "compost heap", "parking lot", "strip mall", "subdivision",
+  "utility pole", "cell tower", "water tower", "grain silo", "substation", "transformer",
+  
+  // Household Items
+  "vacuum", "dishwasher", "microwave", "blender", "toaster", "coffee maker", "kettle",
+  "ironing board", "laundry basket", "hanger", "dryer sheet", "fabric softener",
+  "drain cleaner", "plunger", "toilet brush", "shower curtain", "bath mat", "loofah",
+  "deodorant", "mouthwash", "floss", "Q-tip", "tissue", "paper towel", "sponge",
+
+  // Transportation
+  "hubcap", "windshield wiper", "turn signal", "brake light", "tailpipe", "muffler",
+  "transmission", "differential", "serpentine belt", "hubcap", "dashboard", "odometer",
+  "fare card", "turnstile", "platform", "conductor", "track maintenance", "signal delay",
+  "overhead bin", "tray table", "seatback", "life vest", "floatation device", "tarmac",
+  
+  // Clothing & Accessories
+  "pocket", "buttonhole", "zipper pull", "shoelace", "aglet", "hem", "cuff", "collar",
+  "waistband", "underwire", "pantyhose", "tube sock", "crew neck", "turtleneck",
+  "fanny pack", "wallet chain", "keychain", "lanyard", "name tag", "iron-on patch",
+  "lint roller", "stain remover", "fabric shaver", "hanger", "garment bag", "shoe tree",
+  
+  // Time/Measurement
+  "fortnight", "score", "century", "millennium", "nanosecond", "jiffy", "moment",
+  "smidgen", "pinch", "dash", "scooch", "tad", "skosh", "hair's breadth", "stone",
+  "fathom", "league", "parsec", "light-year", "astronomical unit", "angstrom", "micron",
+  "calorie", "joule", "watt", "horsepower", "foot-pound", "newton-meter", "pascal",
+  
+  // Additional Dissonance
+  "bureaucratic nightmare", "existential dread", "tax season", "root canal", "jury duty",
+  " DMV appointment", "printer ink", "software update", "terms and conditions", "privacy policy",
+  "cookie consent", "captcha", "two-factor authentication", "forgot password", "buffering",
+  "deadline", "performance review", "quarterly earnings", "fiduciary responsibility", "moral hazard",
+  "asymmetric information", "adverse selection", "prisoner's dilemma", "tragedy of the commons",
+  "slippery slope", "false equivalence", "whataboutism", "circular reasoning", "appeal to authority",
+  "post hoc ergo propter hoc", "ad hominem", "straw man", "moving the goalposts", "gaslighting",
+  "negging", "love bombing", "trauma bonding", "parasocial relationship", "stan culture",
+  "cancel culture", "callout post", "doomscrolling", "chronically online", "terminally online",
+  "touch starvation", "sleep debt", "decision fatigue", "analysis paralysis", "imposter syndrome"
 ];
 
 function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
@@ -298,7 +422,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
 
     case "creative_ponder": {
       const insightText = args?.insight_text as string | undefined;
-      const consultModel = args?.consult_model as string | undefined;
+      const consultModel = (args?.consult_model as string | undefined) || "kimi-k2-thinking:cloud";
       const preferConsult = args?.prefer_consult !== false;
 
       const sourceInsight = insightText || (lastInsight ? lastInsight.insights.join("\n") : null);
@@ -320,7 +444,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       // Check if consult is available
       const consultAvailable = preferConsult && await checkConsultAvailable();
 
-      if (consultAvailable && consultModel) {
+      if (consultAvailable) {
         try {
           const prompt = `You are pondering the following creative insights that emerged from a meditation process:\n\n${sourceInsight}\n\nReflect deeply on these insights. What deeper meanings, connections, or implications do you perceive? What questions do they raise? What synthesis emerges from contemplating them?`;
           
