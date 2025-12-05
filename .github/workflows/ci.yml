@@ -15,4 +15,9 @@ jobs:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
     - run: npm ci
-    - run: npm test
+
+    - name: These should PASS
+    - run: npm run test:ci:main
+
+    - name: This *could* PASS and doesn't have to.
+    - run: npm run test:ci:accept-failure

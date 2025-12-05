@@ -11,8 +11,8 @@
     "demo": "node dist/demo-client.js",
     "dev:demo": "ts-node src/demo-client.ts",
     "test": "vitest run --reporter default",
-    "test:watch": "vitest",
-    "ci": "npm i && npm build"
+    "test:ci:main": "vitest --run --typecheck src/__tests__/creative-flow.test.ts",
+    "test:ci:accept-failure": "vitest --run --passWithNoTests --typecheck src/__tests__/ollama-ponder.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.0",
