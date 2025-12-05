@@ -109,6 +109,10 @@ const RANDOM_WORDS = [
   "flabbergast", "bamboozle", "hornswoggle", "skedaddle", "absquatulate",
   "click", "scroll", "swipe", "tap", "pinch", "zoom", "drag", "drop", "toggle",
   "reboot", "refresh", "clear cache", "force quit", "task kill", "unplug", "reboot",
+  "disassemble", "reassemble", "solder", "debug", "compile", "deploy", "rollback",
+  "synchronize", "backup", "restore", "encrypt", "decrypt", "authenticate",
+  "authorize", "log in", "log out", "sign up", "subscribe", "unsubscribe",
+  "streamline", "optimize", "monetize", "gamify", "customize", "personalize",
   
   // Random Adjectives
   "gargantuan", "infinitesimal", "sesquipedalian", "pulchritudinous", "lugubrious",
@@ -182,23 +186,90 @@ function generatePseudoRandomSeed(): string {
   return `${timestamp}-${random}`;
 }
 
-function attemptSentenceFormation(randomWords: string[], contextWords: string[]): string | null {
+function scoreSentenceValidity(words: string[]): number {
+  let score = 0;
+  
+  // Basic patterns that indicate grammatical structure
+  const articles = new Set(["the", "a", "an"]);
+  const prepositions = new Set(["in", "on", "at", "to", "of", "for", "with", "by", "from"]);
+  const conjunctions = new Set(["and", "or", "but", "if", "when", "while", "because"]);
+  const commonVerbs = new Set(["is", "are", "was", "were", "be", "been", "have", "has", "had"]);
+  
+  for (let i = 0; i < words.length - 1; i++) {
+    const curr = words[i].toLowerCase();
+    const next = words[i + 1].toLowerCase();
+    
+    // Article followed by noun-like word (not another article/preposition)
+    if (articles.has(curr) && !articles.has(next) && !prepositions.has(next) && !conjunctions.has(next)) {
+      score += 2;
+    }
+    
+    // Preposition followed by article or noun
+    if (prepositions.has(curr) && (articles.has(next) || (!prepositions.has(next) && !conjunctions.has(next)))) {
+      score += 1.5;
+    }
+    
+    // Conjunction between two content words
+    if (conjunctions.has(curr)) {
+      score += 1;
+    }
+    
+    // Common verb patterns
+    if (commonVerbs.has(curr)) {
+      score += 1;
+    }
+  }
+  
+  // Bonus for reasonable length
+  if (words.length >= 6 && words.length <= 12) {
+    score += 2;
+  }
+  
+  // Penalty for very short or very long
+  if (words.length < 4) {
+    score -= 3;
+  }
+  if (words.length > 15) {
+    score -= 1;
+  }
+  
+  return score;
+}
+
+function generateCandidateSentence(allWords: string[], randomFn: () => number): string[] {
+  const shuffled = [...allWords].sort(() => randomFn() - 0.5);
+  const length = Math.min(8 + Math.floor(randomFn() * 5), shuffled.length); // 8-12 words
+  return shuffled.slice(0, length);
+}
+
+function attemptSentenceFormation(randomWords: string[], contextWords: string[], randomFn: () => number): string | null {
   const allWords = [...randomWords, ...contextWords];
   
-  // Shuffle and attempt to form a syntactically valid sentence
-  const shuffled = allWords.sort(() => Math.random() - 0.5);
+  if (allWords.length < 5) {
+    return null;
+  }
   
-  // Simple heuristic: if we have at least 5 words, try to form a sentence
-  if (shuffled.length >= 5) {
-    // Capitalize first word and add period
-    const sentence = shuffled.slice(0, Math.min(10, shuffled.length))
+  // Generate multiple candidate sentences and pick the best
+  const numCandidates = 20;
+  let bestSentence: string[] = [];
+  let bestScore = -Infinity;
+  
+  for (let i = 0; i < numCandidates; i++) {
+    const candidate = generateCandidateSentence(allWords, randomFn);
+    const score = scoreSentenceValidity(candidate);
+    
+    if (score > bestScore) {
+      bestScore = score;
+      bestSentence = candidate;
+    }
+  }
+  
+  // Format as sentence
+  if (bestSentence.length >= 5) {
+    const sentence = bestSentence
       .map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w)
       .join(" ") + ".";
-    
-    // Check if it seems valid (has some structure)
-    if (sentence.split(" ").length >= 5) {
-      return sentence;
-    }
+    return sentence;
   }
   
   return null;
@@ -316,7 +387,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const maxAttempts = 10;
       
       while (!emergentSentence && attempts < maxAttempts) {
-        emergentSentence = attemptSentenceFormation(randomWords, contextWords);
+        emergentSentence = attemptSentenceFormation(randomWords, contextWords, randomFn);
         if (!emergentSentence) {
           // Add more random words and try again
           randomWords.push(...generateRandomWords(3, randomFn));
