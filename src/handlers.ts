@@ -191,6 +191,21 @@ export function listTools() {
         }
       },
       {
+        name: "creative_tangents",
+        description:
+          "Runs a small constellation of tangential meditations from the same noise source, varying context and structure to explore alternate decodings of the same randomness.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            seed: {
+              type: "string",
+              description: "Optional seed to anchor the shared noise source"
+            }
+          },
+          required: []
+        }
+      },
+      {
         name: "creative_ponder",
         description:
           "Takes insights from creative_insight and either consults the mcp-consult server (if available) or treats the insights as an 'Ask' type prompt for deeper contemplation. Returns the pondering results.",
@@ -209,6 +224,10 @@ export function listTools() {
               type: "boolean",
               description: "Whether to prefer using mcp-consult if available (default: true)",
               default: true
+            },
+            mode: {
+              type: "string",
+              description: "Optional pondering mode: 'embrace-failure' treats emptiness and misfires as first-class output"
             }
           },
           required: []
@@ -220,7 +239,7 @@ export function listTools() {
 
 async function checkConsultAvailable(): Promise<boolean> {
   try {
-    const response = await axios.get(`${OLLAMA_BASE_URL}/api/tags`, { timeout: 2000 });
+    const response = await axios.get(`${OLLAMA_BASE_URL}/api/tags`, { timeout: 5000 });
     return response.status === 200;
   } catch {
     return false;
@@ -229,12 +248,16 @@ async function checkConsultAvailable(): Promise<boolean> {
 
 async function consultOllama(model: string, prompt: string, systemPrompt?: string): Promise<string> {
   try {
-    const response = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
-      model,
-      prompt,
-      system: systemPrompt,
-      stream: false
-    });
+    const response = await axios.post(
+      `${OLLAMA_BASE_URL}/api/generate`,
+      {
+        model,
+        prompt,
+        system: systemPrompt,
+        stream: false,
+      },
+      { timeout: 30000 }
+    );
     return response.data.response;
   } catch (error) {
     throw new Error(`Consult failed: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -318,6 +341,56 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       };
     }
 
+    case "creative_tangents": {
+      const seed = args?.seed as string | undefined;
+      const baseSeed = seed || generatePseudoRandomSeed();
+      const baseRandom = createSeededRandom(baseSeed);
+
+      // Shared noise block
+      const baseNoise = generateRandomWords(16, baseRandom);
+
+      type Tangent = { index: number; sentence: string; context: string[] };
+      const tangents: Tangent[] = [];
+
+      for (let i = 0; i < 3; i++) {
+        const tangentSeed = `${baseSeed}:${i}`;
+        const tangentRandom = createSeededRandom(tangentSeed);
+
+        // Each tangent gets a different tiny context drift from the same pools
+        const drift = generateRandomWords(4, tangentRandom);
+        const tangentContext = drift;
+
+        const sentence =
+          attemptSentenceFormation([...baseNoise, ...drift], tangentContext) ||
+          "The tangent failed to condense; it remains a cloud of uncollapsed possibilities.";
+
+        tangents.push({ index: i + 1, sentence, context: tangentContext });
+      }
+
+      const previewNoise = baseNoise.slice(0, 10).join(", ");
+      const body = tangents
+        .map(t => `Tangent ${t.index} (context drift: ${t.context.join(", ")}):\n  ${t.sentence}`)
+        .join("\n\n");
+
+      const summary =
+        "These tangents share a single noise block but wander in different interpretive directions,\n" +
+        "mirroring how a mind can circle the same feeling from several oblique angles.";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text:
+              `🧶 CREATIVE TANGENTS\n\n` +
+              `Shared seed: ${baseSeed}\n` +
+              `Shared noise preview: ${previewNoise}\n\n` +
+              `${body}\n\n` +
+              `${summary}`,
+          },
+        ],
+      };
+    }
+
     case "creative_insight": {
       if (!lastMeditation) {
         return {
@@ -383,6 +456,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const insightText = args?.insight_text as string | undefined;
       const consultModel = args?.consult_model as string | undefined;
       const preferConsult = args?.prefer_consult !== false;
+      const mode = (args?.mode as string | undefined) || "default";
 
       const sourceInsight = insightText || (lastInsight ? lastInsight.insights.join("\n") : null);
 
@@ -410,23 +484,37 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           ponderingResult = await consultOllama(
             consultModel,
             prompt,
-            "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights."
+            mode === "embrace-failure"
+              ? "You are a philosophical contemplator who treats silence, confusion, and misfires as part of the message, not errors to be erased."
+              : "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights."
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
           // Fall back to internal pondering
-          ponderingResult = `While attempting to consult external wisdom, the connection faltered. Yet this failure itself is instructive: ${sourceInsight}\n\nIn the silence of failed consultation, we find that the insights speak for themselves. They point toward the intersection of randomness and intention, where meaning crystallizes from chaos.`;
+          if (mode === "embrace-failure") {
+            ponderingResult = `Consultation frayed and would not fully arrive. This partial or absent reply becomes the core of the meditation:\n\n${sourceInsight}\n\n` +
+              `Notice what your mind does in the gap where an answer was expected: the projections, worries, and quiet intuitions that rush in to fill the space. ` +
+              `In this mode, the broken channel is not a bug but a mirror, reflecting how meaning continues to self-assemble even when guidance fails.`;
+          } else {
+            ponderingResult = `While attempting to consult external wisdom, the connection faltered. Yet this failure itself is instructive: ${sourceInsight}\n\nIn the silence of failed consultation, we find that the insights speak for themselves. They point toward the intersection of randomness and intention, where meaning crystallizes from chaos.`;
+          }
           method = "Internal contemplation (consultation failed)";
         }
       } else {
         // Internal "Ask" style pondering
-        ponderingResult = `Pondering in solitude:\n\n${sourceInsight}\n\n` +
-          `These insights form a constellation of meaning. They suggest that:\n\n` +
-          `• Emergence is not random but arises from the interplay of chaos and structure\n` +
-          `• Meaning-making is an active process, not passive reception\n` +
-          `• The boundary between signal and noise is itself a creative space\n` +
-          `• What appears as randomness may contain hidden order waiting to be perceived\n\n` +
-          `The meditation-insight cycle mirrors consciousness itself: fragments coalescing into coherence, then dissolving back into potential.`;
+        if (mode === "embrace-failure") {
+          ponderingResult = `Sitting with the insights, without reaching outward:\n\n${sourceInsight}\n\n` +
+            `No additional answers are imposed here. Instead, notice the blank spaces, the unfinished questions, the sense of something just out of reach.\n\n` +
+            `Treat each absence—of clarity, of direction, of resolution—as a kind of negative imprint that hints at what you most long to know.`;
+        } else {
+          ponderingResult = `Pondering in solitude:\n\n${sourceInsight}\n\n` +
+            `These insights form a constellation of meaning. They suggest that:\n\n` +
+            `• Emergence is not random but arises from the interplay of chaos and structure\n` +
+            `• Meaning-making is an active process, not passive reception\n` +
+            `• The boundary between signal and noise is itself a creative space\n` +
+            `• What appears as randomness may contain hidden order waiting to be perceived\n\n` +
+            `The meditation-insight cycle mirrors consciousness itself: fragments coalescing into coherence, then dissolving back into potential.`;
+        }
         method = consultAvailable ? "Internal contemplation (no model specified)" : "Internal contemplation (Ollama unavailable)";
       }
 
