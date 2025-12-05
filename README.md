@@ -10,11 +10,36 @@ The creative meditation process consists of three interconnected tools:
 2. **`creative_insight`** - Analyzes the previous meditation to extract meaningful patterns and insights
 3. **`creative_ponder`** - Takes insights and either consults an external Ollama model (via mcp-consult if available) or performs internal contemplation
 
-## Philosophy
+## Refinements for Coherence (v1.1)
 
-This server explores the intersection of randomness and meaning-making, mirroring how consciousness itself operates: fragments of experience coalescing into coherent understanding, then dissolving back into potential. It's a tool for creative exploration and emergent thinking.
+Recent updates improve the balance between creative chaos and meaningful coherence:
 
-## Tools
+### Algorithm Improvements
+
+1. **Semantic Categorization**: Words are now organized by semantic category (philosophical, abstract, emotional, technical, etc.), allowing the algorithm to favor thematically compatible selections
+
+2. **Category Harmony Scoring**: The sentence validity scoring now includes:
+   - Bonuses for philosophical and abstract word prominence
+   - Penalties for excessive category switching
+   - Preference for meaningful word combinations
+   
+3. **Dual Strategy Generation**: Candidate sentences use two strategies:
+   - **Strategy 1** (50%): Starts with philosophical/context words, then adds supporting random words
+   - **Strategy 2** (50%): Uses distributed selection with bias toward philosophical/abstract positioning
+   
+4. **Enhanced Candidate Evaluation**: Increased from 20 to 60 candidate sentences per meditation, with stronger evaluation criteria prioritizing:
+   - Ideal length (7-11 words for natural phrasing)
+   - Grammatical structure patterns
+   - Semantic coherence
+   - Thematic consistency
+
+### Result
+
+These refinements maintain the creative, exploratory nature of the meditation while producing more coherent, meaningful emergent sentences. Context words are now naturally integrated, and the random elements are selected for thematic resonance rather than pure randomness.
+
+---
+
+
 
 ### creative_meditate
 

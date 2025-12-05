@@ -186,6 +186,65 @@ function generatePseudoRandomSeed(): string {
   return `${timestamp}-${random}`;
 }
 
+// Semantic categories for better word compatibility
+const WORD_CATEGORIES: { [key: string]: string } = {};
+(() => {
+  const categories = {
+    "abstract": ["quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer", "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony", "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence", "infinity", "luminescence", "oscillation", "crystalline", "ephemeral", "eternal", "cascade", "ripple", "vortex", "prism", "spectrum", "wavelength", "frequency", "amplitude", "phase", "coherence", "interference", "superposition", "entanglement", "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction", "manifold"],
+    "emotional": ["ennui", "weltschmerz", "sonder", "monachopsis", "exulansis", "anemoia", "occhiolism", "altschmerz", "lachesism", "rubatosis", "kuebiko", "liberosis", "anxiety", "dread", "malaise", "apathy", "nostalgia", "bittersweet", "melancholy", "overwhelm", "burnout", "imposter syndrome"],
+    "philosophical": ["consciousness", "emergence", "pattern", "paradox", "entropy", "harmony", "coherence", "transcendence", "immanence", "synthesis", "resonance"],
+    "corporate": ["synergy", "leverage", "paradigm", "stakeholder", "deliverable", "actionable", "bandwidth", "optimize", "streamline", "disrupt", "pivot", "scalability", "ROI", "KPI", "compliance"],
+    "mundane": ["spoon", "sock", "toothbrush", "paperclip", "rubberband", "mug", "key", "lightbulb", "button", "zipper", "cork", "sponge", "remote", "envelope"],
+    "technical": ["algorithm", "heuristic", "recursive", "asynchronous", "latency", "bandwidth", "payload", "middleware", "reboot", "compile", "deploy", "debug", "authenticate", "encrypt"]
+  };
+  
+  for (const [category, words] of Object.entries(categories)) {
+    for (const word of words) {
+      WORD_CATEGORIES[word.toLowerCase()] = category;
+    }
+  }
+})();
+
+function getWordCategory(word: string): string {
+  return WORD_CATEGORIES[word.toLowerCase()] || "other";
+}
+
+function calculateCategoryHarmony(words: string[]): number {
+  if (words.length < 2) return 0;
+  
+  let harmony = 0;
+  const categories = words.map(getWordCategory);
+  
+  // Count category diversity, penalize excessive switching
+  let categoryChanges = 0;
+  for (let i = 0; i < categories.length - 1; i++) {
+    if (categories[i] !== categories[i + 1] && categories[i] !== "other" && categories[i + 1] !== "other") {
+      categoryChanges++;
+    }
+  }
+  
+  // Penalize too many category changes (incoherence)
+  if (categoryChanges > 3) {
+    harmony -= categoryChanges;
+  }
+  
+  // Strong bonus for philosophical/abstract focus
+  const philosophicalCount = categories.filter(c => c === "philosophical" || c === "abstract").length;
+  harmony += philosophicalCount * 1.5;
+  
+  // Small bonus for starting with philosophical
+  if (categories[0] === "philosophical" || categories[0] === "abstract") {
+    harmony += 2;
+  }
+  
+  // Small bonus for emotional depth
+  if (categories.includes("emotional")) {
+    harmony += 1;
+  }
+  
+  return harmony;
+}
+
 function scoreSentenceValidity(words: string[]): number {
   let score = 0;
   
@@ -201,45 +260,68 @@ function scoreSentenceValidity(words: string[]): number {
     
     // Article followed by noun-like word (not another article/preposition)
     if (articles.has(curr) && !articles.has(next) && !prepositions.has(next) && !conjunctions.has(next)) {
-      score += 2;
+      score += 3;
     }
     
     // Preposition followed by article or noun
     if (prepositions.has(curr) && (articles.has(next) || (!prepositions.has(next) && !conjunctions.has(next)))) {
-      score += 1.5;
+      score += 2;
     }
     
     // Conjunction between two content words
     if (conjunctions.has(curr)) {
-      score += 1;
+      score += 1.5;
     }
     
     // Common verb patterns
     if (commonVerbs.has(curr)) {
-      score += 1;
+      score += 2;
     }
   }
   
-  // Bonus for reasonable length
+  // Strong bonus for ideal length (7-11 words)
+  if (words.length >= 7 && words.length <= 11) {
+    score += 3;
+  }
+  
+  // Smaller bonus for acceptable length (6-12 words)
   if (words.length >= 6 && words.length <= 12) {
-    score += 2;
+    score += 1.5;
   }
   
   // Penalty for very short or very long
-  if (words.length < 4) {
+  if (words.length < 5) {
+    score -= 5;
+  }
+  if (words.length > 13) {
     score -= 3;
   }
-  if (words.length > 15) {
-    score -= 1;
-  }
+  
+  // Add category harmony adjustment
+  score += calculateCategoryHarmony(words);
   
   return score;
 }
 
 function generateCandidateSentence(allWords: string[], randomFn: () => number): string[] {
-  const shuffled = [...allWords].sort(() => randomFn() - 0.5);
-  const length = Math.min(8 + Math.floor(randomFn() * 5), shuffled.length); // 8-12 words
-  return shuffled.slice(0, length);
+  const length = Math.max(7, Math.min(10 + Math.floor(randomFn() * 2), allWords.length));
+  
+  // Try two strategies: random selection and positional selection
+  if (randomFn() > 0.4) {
+    // Strategy: Random selection (40% of time)
+    const shuffled = [...allWords].sort(() => randomFn() - 0.5);
+    return shuffled.slice(0, length);
+  } else {
+    // Strategy: Distributed selection (60% of time - better coherence)
+    // Pick words evenly distributed across the array
+    const selected: string[] = [];
+    const step = Math.max(1, Math.floor(allWords.length / length));
+    for (let i = 0; i < length && selected.length < length; i++) {
+      const idx = (i * step + Math.floor(randomFn() * Math.max(1, step))) % allWords.length;
+      selected.push(allWords[idx]);
+    }
+    return selected.length >= 5 ? selected : [...allWords].sort(() => randomFn() - 0.5).slice(0, length);
+  }
 }
 
 function attemptSentenceFormation(randomWords: string[], contextWords: string[], randomFn: () => number): string | null {
@@ -249,13 +331,64 @@ function attemptSentenceFormation(randomWords: string[], contextWords: string[],
     return null;
   }
   
-  // Generate multiple candidate sentences and pick the best
-  const numCandidates = 20;
+  // Separate words by semantic strength for better compositions
+  const philosophicalWords = allWords.filter(w => getWordCategory(w) === "philosophical" || getWordCategory(w) === "abstract");
+  const otherWords = allWords.filter(w => getWordCategory(w) !== "philosophical" && getWordCategory(w) !== "abstract");
+  
   let bestSentence: string[] = [];
   let bestScore = -Infinity;
   
+  const numCandidates = 60;
+  
   for (let i = 0; i < numCandidates; i++) {
-    const candidate = generateCandidateSentence(allWords, randomFn);
+    let candidate: string[] = [];
+    const strategy = randomFn();
+    
+    // Strategy 1 (50%): Start with philosophical/context, sprinkle others
+    if (strategy < 0.5 && philosophicalWords.length > 0) {
+      const numPhil = Math.min(3, Math.max(1, Math.floor(philosophicalWords.length * 0.6)));
+      const shuffledPhil = [...philosophicalWords].sort(() => randomFn() - 0.5);
+      candidate = [...shuffledPhil.slice(0, numPhil)];
+      
+      const remainingSlots = Math.max(6, Math.min(9, 9 - candidate.length));
+      const shuffledOther = [...otherWords].sort(() => randomFn() - 0.5);
+      candidate.push(...shuffledOther.slice(0, remainingSlots));
+    } else {
+      // Strategy 2 (50%): Distributed selection with bias toward philosophical at start
+      const targetLength = 7 + Math.floor(randomFn() * 3);
+      
+      // Place philosophical words at the start (positions 0-2)
+      if (philosophicalWords.length > 0) {
+        candidate.push(...philosophicalWords.slice(0, Math.min(2, philosophicalWords.length)));
+      }
+      
+      // Fill rest with mixed words
+      const remaining = targetLength - candidate.length;
+      const shuffledRest = [...allWords].sort(() => randomFn() - 0.5);
+      const seen = new Set(candidate);
+      
+      for (const word of shuffledRest) {
+        if (candidate.length >= targetLength) break;
+        if (!seen.has(word)) {
+          candidate.push(word);
+          seen.add(word);
+        }
+      }
+    }
+    
+    // Ensure we have enough words
+    if (candidate.length < 5) {
+      const shuffled = [...allWords].sort(() => randomFn() - 0.5);
+      const seen = new Set(candidate);
+      for (const word of shuffled) {
+        if (candidate.length >= 8) break;
+        if (!seen.has(word)) {
+          candidate.push(word);
+          seen.add(word);
+        }
+      }
+    }
+    
     const score = scoreSentenceValidity(candidate);
     
     if (score > bestScore) {
@@ -517,12 +650,12 @@ export async function callToolHandler(params: { name: string; arguments?: any })
 
       if (consultAvailable) {
         try {
-          const prompt = `You are pondering the following creative insights that emerged from a meditation process:\n\n${sourceInsight}\n\nReflect deeply on these insights. What deeper meanings, connections, or implications do you perceive? What questions do they raise? What synthesis emerges from contemplating them?`;
+          const prompt = `You are pondering the following creative insights that emerged from a meditation process:\n\n${sourceInsight}\n\nReflect deeply on these insights. What deeper meanings, connections, or implications do you perceive? What questions do they raise? What synthesis emerges from contemplating them? After sharing your reflection, suggest up to three specific web lookup queries (if any) that could enrich this contemplation, phrased so a user could decide whether to authorize a search.`;
           
           ponderingResult = await consultOllama(
             consultModel,
             prompt,
-            "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights."
+            "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights while politely proposing optional web lookups when appropriate."
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
