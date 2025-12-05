@@ -19,5 +19,5 @@ jobs:
     - name: These should PASS
     - run: npm run test:ci:main
 
-    - name: This *could* PASS and doesn't have to.
+    - name: This *could* PASS
     - run: npm run test:ci:accept-failure
