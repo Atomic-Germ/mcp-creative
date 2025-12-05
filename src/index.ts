@@ -6,6 +6,10 @@ import { listTools, callToolHandler } from "./handlers.js";
 const server = new Server({
   name: "creative-meditate",
   version: "1.0.0",
+}, {
+  capabilities: {
+    tools: {},
+  },
 });
 
 server.setRequestHandler(ListToolsRequestSchema, async () => listTools());

@@ -24,7 +24,8 @@ let lastMeditation: MeditationState | null = null;
 let lastInsight: InsightState | null = null;
 
 // Word corpus for random generation
-const RANDOM_WORDS = [
+// Organized into loose thematic pools to encourage strange collisions.
+const ABSTRACT_CORE = [
   "quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer",
   "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony",
   "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence",
@@ -35,10 +36,65 @@ const RANDOM_WORDS = [
   "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction"
 ];
 
+const MUNDANE_OBJECTS = [
+  "spoon", "doorknob", "elevator", "receipt", "coffee", "pillow", "staircase",
+  "notebook", "window", "backpack", "umbrella", "remote", "toothbrush", "headphones",
+  "coin", "ticket", "keyboard", "mirror", "towel", "lamp", "chair", "socket",
+  "cable", "battery", "cup", "plate", "bus", "train", "pavement", "thumbnail"
+];
+
+const GLITCH_TECH = [
+  "packet", "latency", "buffer", "segfault", "kernel", "cursor", "firmware",
+  "console", "cache", "syntax", "runtime", "daemon", "socket", "protocol",
+  "hash", "opcode", "allocator", "heap", "pointer", "overflow", "underflow",
+  "checksum", "iterator", "sandbox", "container", "pipeline", "nanosecond"
+];
+
+const BIZARRE_ACTIONS = [
+  "melts", "oscillates", "bleeds", "flickers", "loops", "spills", "dissolves",
+  "folds", "reboots", "mutates", "echoes", "sprawls", "glitches", "stutters",
+  "sprawls", "drifts", "erases", "splices", "reverses", "decompresses", "encrypts",
+  "scrambles", "shears", "fractures", "remixes"
+];
+
+const EMOTIONS = [
+  "longing", "quiet-joy", "melancholy", "irritation", "awe", "tension", "relief",
+  "nostalgia", "anticipation", "dread", "gratitude", "tenderness", "restlessness",
+  "confusion", "clarity", "euphoria", "weariness", "curiosity"
+];
+
+const PLACE_FRAGMENTS = [
+  "corridor", "rooftop", "subway", "waiting-room", "server-room", "attic",
+  "crosswalk", "forest-edge", "parking-lot", "kitchen-sink", "airport-gate",
+  "empty-theatre", "hotel-lobby", "data-center", "hinterland", "harbor"
+];
+
+const NUMBER_STRINGS = [
+  "4183", "0000", "13", "1010", "404", "3.1415", "0xDEAD", "2049", "∞",
+  "11:11", "7e3", "001101", "5/8", "9.81"
+];
+
+const SYMBOL_NOISE = [
+  "#?", "∴", "≈", "/dev/null", "::*", "//TODO", "#!", "{ }", "<>", "⁂",
+  "^Z", "ctrl-c", "%TEMP%", "~/", "ψ", "∆", "★", "☍"
+];
+
+const RANDOM_POOLS: string[][] = [
+  ABSTRACT_CORE,
+  MUNDANE_OBJECTS,
+  GLITCH_TECH,
+  BIZARRE_ACTIONS,
+  EMOTIONS,
+  PLACE_FRAGMENTS,
+  NUMBER_STRINGS,
+  SYMBOL_NOISE,
+];
+
 function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
-    words.push(RANDOM_WORDS[Math.floor(randomFn() * RANDOM_WORDS.length)]);
+    const pool = RANDOM_POOLS[Math.floor(randomFn() * RANDOM_POOLS.length)];
+    words.push(pool[Math.floor(randomFn() * pool.length)]);
   }
   return words;
 }
@@ -60,23 +116,34 @@ function generatePseudoRandomSeed(): string {
 
 function attemptSentenceFormation(randomWords: string[], contextWords: string[]): string | null {
   const allWords = [...randomWords, ...contextWords];
-  
-  // Shuffle and attempt to form a syntactically valid sentence
-  const shuffled = allWords.sort(() => Math.random() - 0.5);
-  
-  // Simple heuristic: if we have at least 5 words, try to form a sentence
-  if (shuffled.length >= 5) {
-    // Capitalize first word and add period
-    const sentence = shuffled.slice(0, Math.min(10, shuffled.length))
+  if (allWords.length === 0) return null;
+
+  const pick = (): string => allWords[Math.floor(Math.random() * allWords.length)];
+
+  const sentenceTemplates = [
+    () => `Between ${pick()} and ${pick()}, ${pick()} ${pick()} around ${pick()}.`,
+    () => `${pick()} drifts through ${pick()}, annotated by ${pick()} and forgotten ${pick()}.`,
+    () => `In the corridor between ${pick()} and ${pick()}, ${pick()} quietly ${pick()}.`,
+    () => `${pick()} remembers ${pick()} while ${pick()} glitches beside ${pick()}.`,
+    () => `${pick()} is a note scribbled in the margin of ${pick()} ${pick()}.`,
+  ];
+
+  // 50% of the time, use a structured but surreal template.
+  if (allWords.length >= 4 && Math.random() < 0.5) {
+    const template = sentenceTemplates[Math.floor(Math.random() * sentenceTemplates.length)];
+    return template();
+  }
+
+  // Fallback: shuffled fragment chain.
+  const shuffled = [...allWords].sort(() => Math.random() - 0.5);
+  if (shuffled.length >= 3) {
+    const maxWords = Math.min(14, shuffled.length);
+    const sentence = shuffled.slice(0, maxWords)
       .map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w)
       .join(" ") + ".";
-    
-    // Check if it seems valid (has some structure)
-    if (sentence.split(" ").length >= 5) {
-      return sentence;
-    }
+    return sentence;
   }
-  
+
   return null;
 }
 
@@ -124,6 +191,21 @@ export function listTools() {
         }
       },
       {
+        name: "creative_tangents",
+        description:
+          "Runs a small constellation of tangential meditations from the same noise source, varying context and structure to explore alternate decodings of the same randomness.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            seed: {
+              type: "string",
+              description: "Optional seed to anchor the shared noise source"
+            }
+          },
+          required: []
+        }
+      },
+      {
         name: "creative_ponder",
         description:
           "Takes insights from creative_insight and either consults the mcp-consult server (if available) or treats the insights as an 'Ask' type prompt for deeper contemplation. Returns the pondering results.",
@@ -142,6 +224,10 @@ export function listTools() {
               type: "boolean",
               description: "Whether to prefer using mcp-consult if available (default: true)",
               default: true
+            },
+            mode: {
+              type: "string",
+              description: "Optional pondering mode: 'embrace-failure' treats emptiness and misfires as first-class output"
             }
           },
           required: []
@@ -153,7 +239,7 @@ export function listTools() {
 
 async function checkConsultAvailable(): Promise<boolean> {
   try {
-    const response = await axios.get(`${OLLAMA_BASE_URL}/api/tags`, { timeout: 2000 });
+    const response = await axios.get(`${OLLAMA_BASE_URL}/api/tags`, { timeout: 5000 });
     return response.status === 200;
   } catch {
     return false;
@@ -162,12 +248,16 @@ async function checkConsultAvailable(): Promise<boolean> {
 
 async function consultOllama(model: string, prompt: string, systemPrompt?: string): Promise<string> {
   try {
-    const response = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
-      model,
-      prompt,
-      system: systemPrompt,
-      stream: false
-    });
+    const response = await axios.post(
+      `${OLLAMA_BASE_URL}/api/generate`,
+      {
+        model,
+        prompt,
+        system: systemPrompt,
+        stream: false,
+      },
+      { timeout: 30000 }
+    );
     return response.data.response;
   } catch (error) {
     throw new Error(`Consult failed: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -205,7 +295,23 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       }
 
       // Interpret the emergent sentence
-      const interpretation = `From the interplay of random (${randomWords.slice(0, 5).join(", ")}...) and contextual elements (${contextWords.join(", ") || "none"}), emerges: "${emergentSentence}"\n\nThis synthesis suggests a contemplation on ${emergentSentence.toLowerCase().includes("void") ? "emptiness and potential" : emergentSentence.toLowerCase().includes("resonance") ? "harmonic connections" : "emergent patterns"}. The meditation reveals how ${contextWords.length > 0 ? "structured intention" : "pure chaos"} interacts with randomness to birth meaning.`;
+      const sampleRandom = randomWords.slice(0, 7).join(", ");
+      const hasDigitsOrSymbols = randomWords.some(w => /[0-9#%&@/\\_*<>]/.test(w));
+      const baseTheme = emergentSentence.toLowerCase().includes("void")
+        ? "emptiness and potential"
+        : emergentSentence.toLowerCase().includes("resonance")
+        ? "harmonic connections"
+        : "emergent patterns";
+
+      const noiseComment = hasDigitsOrSymbols
+        ? "The field is saturated with near-pure ciphertext: digits, symbols, and glitches that refuse single meanings."
+        : "The field leans more toward verbal imagery than raw noise, inviting slower decoding.";
+
+      const keyComment = contextWords.length > 0
+        ? "Your supplied context behaves like a partial decryption key, subtly biasing the hallucinated meaning."
+        : "With no explicit context, the system treats noise itself as both cipher and key, inventing structure on the fly.";
+
+      const interpretation = `From the interplay of random (${sampleRandom}...) and contextual elements (${contextWords.join(", ") || "none"}), emerges: "${emergentSentence}"\n\nThis synthesis suggests a contemplation on ${baseTheme}. ${noiseComment} ${keyComment} Each pass over the same seed could decode a different story from the same underlying scramble.`;
 
       lastMeditation = {
         randomWords,
@@ -232,6 +338,56 @@ export async function callToolHandler(params: { name: string; arguments?: any })
                   `(Meditation state saved to ${meditationFile})`
           }
         ]
+      };
+    }
+
+    case "creative_tangents": {
+      const seed = args?.seed as string | undefined;
+      const baseSeed = seed || generatePseudoRandomSeed();
+      const baseRandom = createSeededRandom(baseSeed);
+
+      // Shared noise block
+      const baseNoise = generateRandomWords(16, baseRandom);
+
+      type Tangent = { index: number; sentence: string; context: string[] };
+      const tangents: Tangent[] = [];
+
+      for (let i = 0; i < 3; i++) {
+        const tangentSeed = `${baseSeed}:${i}`;
+        const tangentRandom = createSeededRandom(tangentSeed);
+
+        // Each tangent gets a different tiny context drift from the same pools
+        const drift = generateRandomWords(4, tangentRandom);
+        const tangentContext = drift;
+
+        const sentence =
+          attemptSentenceFormation([...baseNoise, ...drift], tangentContext) ||
+          "The tangent failed to condense; it remains a cloud of uncollapsed possibilities.";
+
+        tangents.push({ index: i + 1, sentence, context: tangentContext });
+      }
+
+      const previewNoise = baseNoise.slice(0, 10).join(", ");
+      const body = tangents
+        .map(t => `Tangent ${t.index} (context drift: ${t.context.join(", ")}):\n  ${t.sentence}`)
+        .join("\n\n");
+
+      const summary =
+        "These tangents share a single noise block but wander in different interpretive directions,\n" +
+        "mirroring how a mind can circle the same feeling from several oblique angles.";
+
+      return {
+        content: [
+          {
+            type: "text",
+            text:
+              `🧶 CREATIVE TANGENTS\n\n` +
+              `Shared seed: ${baseSeed}\n` +
+              `Shared noise preview: ${previewNoise}\n\n` +
+              `${body}\n\n` +
+              `${summary}`,
+          },
+        ],
       };
     }
 
@@ -300,6 +456,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const insightText = args?.insight_text as string | undefined;
       const consultModel = args?.consult_model as string | undefined;
       const preferConsult = args?.prefer_consult !== false;
+      const mode = (args?.mode as string | undefined) || "default";
 
       const sourceInsight = insightText || (lastInsight ? lastInsight.insights.join("\n") : null);
 
@@ -327,23 +484,37 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           ponderingResult = await consultOllama(
             consultModel,
             prompt,
-            "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights."
+            mode === "embrace-failure"
+              ? "You are a philosophical contemplator who treats silence, confusion, and misfires as part of the message, not errors to be erased."
+              : "You are a philosophical contemplator, skilled at finding deep meaning in emergent patterns and creative insights."
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
           // Fall back to internal pondering
-          ponderingResult = `While attempting to consult external wisdom, the connection faltered. Yet this failure itself is instructive: ${sourceInsight}\n\nIn the silence of failed consultation, we find that the insights speak for themselves. They point toward the intersection of randomness and intention, where meaning crystallizes from chaos.`;
+          if (mode === "embrace-failure") {
+            ponderingResult = `Consultation frayed and would not fully arrive. This partial or absent reply becomes the core of the meditation:\n\n${sourceInsight}\n\n` +
+              `Notice what your mind does in the gap where an answer was expected: the projections, worries, and quiet intuitions that rush in to fill the space. ` +
+              `In this mode, the broken channel is not a bug but a mirror, reflecting how meaning continues to self-assemble even when guidance fails.`;
+          } else {
+            ponderingResult = `While attempting to consult external wisdom, the connection faltered. Yet this failure itself is instructive: ${sourceInsight}\n\nIn the silence of failed consultation, we find that the insights speak for themselves. They point toward the intersection of randomness and intention, where meaning crystallizes from chaos.`;
+          }
           method = "Internal contemplation (consultation failed)";
         }
       } else {
         // Internal "Ask" style pondering
-        ponderingResult = `Pondering in solitude:\n\n${sourceInsight}\n\n` +
-          `These insights form a constellation of meaning. They suggest that:\n\n` +
-          `• Emergence is not random but arises from the interplay of chaos and structure\n` +
-          `• Meaning-making is an active process, not passive reception\n` +
-          `• The boundary between signal and noise is itself a creative space\n` +
-          `• What appears as randomness may contain hidden order waiting to be perceived\n\n` +
-          `The meditation-insight cycle mirrors consciousness itself: fragments coalescing into coherence, then dissolving back into potential.`;
+        if (mode === "embrace-failure") {
+          ponderingResult = `Sitting with the insights, without reaching outward:\n\n${sourceInsight}\n\n` +
+            `No additional answers are imposed here. Instead, notice the blank spaces, the unfinished questions, the sense of something just out of reach.\n\n` +
+            `Treat each absence—of clarity, of direction, of resolution—as a kind of negative imprint that hints at what you most long to know.`;
+        } else {
+          ponderingResult = `Pondering in solitude:\n\n${sourceInsight}\n\n` +
+            `These insights form a constellation of meaning. They suggest that:\n\n` +
+            `• Emergence is not random but arises from the interplay of chaos and structure\n` +
+            `• Meaning-making is an active process, not passive reception\n` +
+            `• The boundary between signal and noise is itself a creative space\n` +
+            `• What appears as randomness may contain hidden order waiting to be perceived\n\n` +
+            `The meditation-insight cycle mirrors consciousness itself: fragments coalescing into coherence, then dissolving back into potential.`;
+        }
         method = consultAvailable ? "Internal contemplation (no model specified)" : "Internal contemplation (Ollama unavailable)";
       }
 
