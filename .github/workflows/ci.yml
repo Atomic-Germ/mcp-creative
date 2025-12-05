@@ -8,16 +8,17 @@ on:
 
 jobs:
   Test:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
     - run: npm ci
 
     - name: These should PASS
-    - run: npm run test:ci:main
+      run: npm run test:ci:main
 
     - name: This *could* PASS
-    - run: npm run test:ci:accept-failure
+      run: npm run test:ci:accept-failure
