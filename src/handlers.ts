@@ -26,144 +26,66 @@ let lastInsight: InsightState | null = null;
 
 // Word corpus for random generation
 const RANDOM_WORDS = [
-// Abstract/Technical (original style but expanded)
-  "quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer",
-  "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony",
-  "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence",
-  "infinity", "luminescence", "oscillation", "crystalline", "ephemeral", "eternal",
-  "membrane", "substrate", "lattice", "matrix", "dimension", "singularity",
-  "cascade", "ripple", "vortex", "prism", "spectrum", "wavelength", "frequency",
-  "amplitude", "phase", "coherence", "interference", "superposition", "entanglement",
-  "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction",
-  "manifold", "tensor", "isomorphism", "cryptography", "algorithm", "heuristic",
-  "recursive", "asynchronous", "latency", "bandwidth", "payload", "middleware",
-  "differential", "cohomology", "fibration", "functor", "monad", "adjunction",
-  "equivariant", "holonomic", "microsupport", "ramification", "filtration", "stratification",
+  // Structural relations (how things connect)
+  "pattern", "structure", "connection", "relationship", "interface",
+  "binding", "constraint", "coupling", "dependency", "hierarchy",
+  "layer", "boundary", "transition", "gradient", "threshold",
+  "symmetry", "asymmetry", "balance", "tension", "equilibrium",
   
-  // Mundane Everyday Objects
-  "spoon", "sock", "toothbrush", "paperclip", "rubberband", "binder", "stapler",
-  "mug", "key", "doormat", "lightbulb", "batteries", "remote", "penny", "envelope",
-  "button", "zipper", "cork", "sponge", "tupperware", "coaster", "dustpan", "clothespin",
-  "extension cord", "air freshener", "candle", "mousetrap", "lunchbox", "water bottle",
-  "umbrella", "shopping cart", "traffic cone", "parking meter", "manhole cover", "gutter",
+  // Movement & change (ways things transform)
+  "flow", "cascade", "spiral", "cycle", "momentum",
+  "acceleration", "deceleration", "inversion", "reversal", "iteration",
+  "propagation", "diffusion", "concentration", "dispersal", "distribution",
+  "accumulation", "depletion", "saturation", "emergence", "collapse",
   
-  // Corporate/Bureaucratic
-  "synergy", "leverage", "paradigm", "stakeholder", "deliverable", "actionable",
-  "bandwidth", "drilldown", "ping", "circle back", "touch base", "move the needle",
-  "boil the ocean", "synergize", "optimize", "streamline", "disrupt", "pivot",
-  "scalability", "ROI", "KPI", "compliance", "audit", "liability", "fiduciary",
-  "escalation", "touchpoint", "mindshare", "value-add", "low-hanging fruit",
+  // States & conditions (what things can be)
+  "potential", "active", "latent", "manifest", "dormant",
+  "stable", "volatile", "dynamic", "static", "fluid",
+  "resolved", "unresolved", "open", "closed", "permeable",
+  "present", "absent", "partial", "complete", "fractional",
   
-  // Internet/Digital Culture
-  "meme", "viral", "hashtag", "algorithm", "bot", "troll", "stream", "content",
-  "influencer", "engagement", "clickbait", "SEO", "cookie", "cache", "404",
-  "unplugged", "digital detox", "FOMO", "TL;DR", "DM", "AMA", "NSFW", "IRL",
-  "meta", "cringe", "based", "ratio", "main character", "vibe check", "touch grass",
-
-  // Biological/Medical
-  "mitochondria", "ribosome", "telomere", "apoptosis", "homeostasis", "neuroplasticity",
-  "microbiome", "phagocytosis", "cytokine", "antigen", "pathogen", "antibody",
-  "placebo", "side effect", "copay", "deductible", "referral", "waiting room",
-  "band-aid", "syringe", "catheter", "biopsy", "anesthesia", "post-op", "vein",
-  "toenail", "earwax", "fingernail", "belly button", "armpit", "kneecap",
+  // Qualities & properties (intrinsic characteristics)
+  "density", "elasticity", "porosity", "brittleness", "fluidity",
+  "opacity", "transparency", "conductivity", "resistance", "affinity",
+  "resonance", "dissonance", "harmony", "discord", "coherence",
+  "fragmentation", "integration", "coherence", "confusion", "clarity",
   
-  // Emotional/Psychological
-  "ennui", "weltschmerz", "sonder", "monachopsis", "exulansis", "anemoia",
-  "occhiolism", "altschmerz", "lachesism", "rubatosis", "kuebiko", "liberosis",
-  "anxiety", "dread", "malaise", "apathy", "nostalgia", "bittersweet", "melancholy",
-  "overwhelm", "burnout", "imposter syndrome", "cognitive dissonance", "projection",
-  "deflection", "passive aggressive", "trauma dump", "toxic positivity", "boundaries",
+  // Processes & verbs (actions and mechanisms)
+  "iterate", "recurse", "branch", "merge", "diverge",
+  "converge", "stabilize", "destabilize", "amplify", "dampen",
+  "catalyze", "inhibit", "propagate", "contain", "distribute",
+  "compose", "decompose", "modulate", "regulate", "optimize",
   
-  // Food & Consumables
-  "mayonnaise", "ketchup", "relish", "mustard", "pickle", "tater tot", "hot dog",
-  "instant noodles", "frozen pizza", "cereal", "milk", "bread", "butter", "eggs",
-  "coffee", "energy drink", "protein bar", "gummy vitamins", "leftovers", "condiment",
-  "sauce packet", "flavor dust", "cheese dust", "bone broth", "plant-based", "artisanal",
-  "craft", "small batch", "single origin", "gluten-free", "keto-friendly", "organic",
+  // Spatial relations (positioning and topology)
+  "adjacent", "nested", "overlapping", "distinct", "parallel",
+  "perpendicular", "concentric", "eccentric", "central", "peripheral",
+  "superficial", "deep", "internal", "external", "intermediate",
+  "proximal", "distal", "contiguous", "separated", "bridging",
   
-  // Financial/Economic
-  "inflation", "deflation", "stagflation", "recession", "depression", "bull market",
-  "bear market", "cryptocurrency", "NFT", "blockchain", "liquidity", "margin call",
-  "short squeeze", "diversification", "portfolio", "amortization", "depreciation",
-  "tax shelter", "deduction", "withholding", "compound interest", "opportunity cost",
+  // Temporal aspects (time-related dynamics)
+  "momentum", "precedence", "sequence", "simultaneous", "asynchronous",
+  "delayed", "immediate", "accelerating", "decelerating", "cyclic",
+  "linear", "recursive", "causal", "consequential", "contingent",
+  "inevitable", "contingent", "reversible", "irreversible", "transient",
   
-  // Legal/Governmental
-  "jurisdiction", "precedent", "subpoena", "affidavit", "deposition", "litigation",
-  "tort", "negligence", "eminent domain", "bureaucracy", "red tape", "loophole",
-  "statute", "ordinance", "permit", "compliance", "regulation", "audit", "waiver",
-  "disclaimer", "terms of service", "privacy policy", "NDA", "force majeure",
-
-  // Pop Culture
-  "butterfly effect", "red pill", "blue pill", "force", "lightsaber", "TARDIS",
-  "sonic screwdriver", "infinity stone", "demogorgon", "upsidedown", "muggle",
-  "squib", "horcrux", "parseltongue", "mandalorian", "droid", "wookie", "jedi",
-  "sith", "replicant", "blade runner", "tyrell corporation", "weyland-yutani",
+  // Logical & relational operators
+  "and", "or", "not", "if", "then", "unless",
+  "because", "therefore", "consequently", "implies", "requires",
+  "permits", "forbids", "invokes", "suspends", "overrides",
+  "contradicts", "complements", "extends", "restricts", "refines",
   
-  // Body Parts & Functions
-  "elbow", "kneecap", "earlobe", "nostril", "cuticle", "follicle", "taste bud",
-  "uvula", "appendix", "pancreas", "spleen", "gallbladder", "bile duct",
-  "hiccup", "sneeze", "cough", "yawn", "snore", "burp", "fart", "blush", "sweat",
-  "goosebumps", "hangnail", "callus", "corn", "bunion", "wart", "mole", "freckle",
+  // Scale & magnitude (relative sizing)
+  "granular", "coarse", "microscopic", "macroscopic", "intermediate",
+  "minimal", "maximal", "threshold", "saturation", "critical",
+  "marginal", "dominant", "negligible", "substantial", "proportional",
+  "scaled", "distributed", "concentrated", "diffuse", "localized",
   
-  // Random Verbs
-  "transmogrify", "defenestrate", "obfuscate", "concatenate", "discombobulate",
-  "flabbergast", "bamboozle", "hornswoggle", "skedaddle", "absquatulate",
-  "click", "scroll", "swipe", "tap", "pinch", "zoom", "drag", "drop", "toggle",
-  "reboot", "refresh", "clear cache", "force quit", "task kill", "unplug", "reboot",
-  "disassemble", "reassemble", "solder", "debug", "compile", "deploy", "rollback",
-  "synchronize", "backup", "restore", "encrypt", "decrypt", "authenticate",
-  "authorize", "log in", "log out", "sign up", "subscribe", "unsubscribe",
-  "streamline", "optimize", "monetize", "gamify", "customize", "personalize",
-  
-  // Random Adjectives
-  "gargantuan", "infinitesimal", "sesquipedalian", "pulchritudinous", "lugubrious",
-  "mellifluous", "obsequious", "perspicacious", "quixotic", "sanguine",
-  "janky", "busted", "wonky", "funky", "sketchy", "dodgy", "sus", "cringe", "mid",
-  "basic", "extra", "slay", "lit", "fire", "dope", "sick", "tight", "gucci", "bougie",
-  
-  // Geographical/Natural (Mundane)
-  "cul-de-sac", "intersection", "overpass", "underpass", "roundabout", "dead end",
-  "pothole", "speed bump", "median strip", "drainage ditch", "retention pond", "sewer",
-  "landfill", "recycling bin", "compost heap", "parking lot", "strip mall", "subdivision",
-  "utility pole", "cell tower", "water tower", "grain silo", "substation", "transformer",
-  
-  // Household Items
-  "vacuum", "dishwasher", "microwave", "blender", "toaster", "coffee maker", "kettle",
-  "ironing board", "laundry basket", "hanger", "dryer sheet", "fabric softener",
-  "drain cleaner", "plunger", "toilet brush", "shower curtain", "bath mat", "loofah",
-  "deodorant", "mouthwash", "floss", "Q-tip", "tissue", "paper towel", "sponge",
-
-  // Transportation
-  "hubcap", "windshield wiper", "turn signal", "brake light", "tailpipe", "muffler",
-  "transmission", "differential", "serpentine belt", "hubcap", "dashboard", "odometer",
-  "fare card", "turnstile", "platform", "conductor", "track maintenance", "signal delay",
-  "overhead bin", "tray table", "seatback", "life vest", "floatation device", "tarmac",
-  
-  // Clothing & Accessories
-  "pocket", "buttonhole", "zipper pull", "shoelace", "aglet", "hem", "cuff", "collar",
-  "waistband", "underwire", "pantyhose", "tube sock", "crew neck", "turtleneck",
-  "fanny pack", "wallet chain", "keychain", "lanyard", "name tag", "iron-on patch",
-  "lint roller", "stain remover", "fabric shaver", "hanger", "garment bag", "shoe tree",
-  
-  // Time/Measurement
-  "fortnight", "score", "century", "millennium", "nanosecond", "jiffy", "moment",
-  "smidgen", "pinch", "dash", "scooch", "tad", "skosh", "hair's breadth", "stone",
-  "fathom", "league", "parsec", "light-year", "astronomical unit", "angstrom", "micron",
-  "calorie", "joule", "watt", "horsepower", "foot-pound", "newton-meter", "pascal",
-  
-  // Additional Dissonance
-  "bureaucratic nightmare", "existential dread", "tax season", "root canal", "jury duty",
-  " DMV appointment", "printer ink", "software update", "terms and conditions", "privacy policy",
-  "cookie consent", "captcha", "two-factor authentication", "forgot password", "buffering",
-  "deadline", "performance review", "quarterly earnings", "fiduciary responsibility", "moral hazard",
-  "asymmetric information", "adverse selection", "prisoner's dilemma", "tragedy of the commons",
-  "slippery slope", "false equivalence", "whataboutism", "circular reasoning", "appeal to authority",
-  "post hoc ergo propter hoc", "ad hominem", "straw man", "moving the goalposts", "gaslighting",
-  "negging", "love bombing", "trauma bonding", "parasocial relationship", "stan culture",
-  "cancel culture", "callout post", "doomscrolling", "chronically online", "terminally online",
-  "touch starvation", "sleep debt", "decision fatigue", "analysis paralysis", "imposter syndrome"
+  // Coupling & composition (how things combine)
+  "coupled", "decoupled", "loosely", "tightly", "strongly",
+  "weakly", "directly", "indirectly", "mediated", "unmediated",
+  "composite", "atomic", "modular", "monolithic", "distributed",
+  "redundant", "singular", "replicated", "unique", "shared"
 ];
-
 function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -438,88 +360,44 @@ function generateInternalPondering(insights: string[], contextWords?: string[]):
 }
 
 function generateContextualInterpretation(sentence: string, randomWords: string[], contextWords: string[]): string {
-  const sentenceLower = sentence.toLowerCase();
-  const wordList = sentence.split(/\s+/);
-  
-  // Count word categories and collect actual words used
-  let philosophicalCount = 0;
-  let mundaneCount = 0;
-  let emotionalCount = 0;
-  let technicalCount = 0;
-  const usedWords = new Set(wordList.map(w => w.toLowerCase().replace(/[.,;:!?]/g, "")));
-  
-  for (const word of wordList) {
-    const cat = getWordCategory(word.toLowerCase());
-    if (cat === "philosophical" || cat === "abstract") philosophicalCount++;
-    if (cat === "mundane") mundaneCount++;
-    if (cat === "emotional") emotionalCount++;
-    if (cat === "technical") technicalCount++;
-  }
-  
-  // Build interpretation based on actual semantic balance
   const parts: string[] = [];
   
-  // Primary observation - what's actually there
-  if (usedWords.has("consciousness") && usedWords.has("emergence")) {
-    parts.push("The meditation holds consciousness in the act of emerging.");
-  } else if (sentenceLower.includes("consciousness")) {
-    parts.push("Awareness appears within the sentence.");
-  } else if (sentenceLower.includes("pattern")) {
-    parts.push("Structure reveals itself in the arrangement.");
-  } else if (emotionalCount >= 2) {
-    parts.push("Feeling colors the landscape unexpectedly.");
-  } else if (mundaneCount >= 3) {
-    parts.push("The ordinary surprises with presence.");
-  } else if (technicalCount >= 2) {
-    parts.push("Logic and precision shape the utterance.");
-  } else if (philosophicalCount >= 4) {
-    parts.push("Abstract thought coalesces into language.");
+  // Simply acknowledge what emerged, without interpretation
+  parts.push("What emerged:");
+  parts.push(`  "${sentence}"`);
+  
+  parts.push("");
+  
+  // Name what was brought to the meditation
+  if (contextWords.length > 0) {
+    parts.push(`Anchors: ${contextWords.join(", ")}`);
   } else {
-    parts.push("The sentence creates its own ground.");
+    parts.push("Anchors: none");
   }
   
-  // Secondary observation - dynamic based on context and content
-  if (contextWords.length === 0) {
-    const secondaries = [
-      "Unanchored, it drifts with its own weight.",
-      "Without guidance, something still takes shape.",
-      "Pure formation without intention.",
-      "The randomness stands on its own."
-    ];
-    parts.push(secondaries[Math.floor(Math.random() * secondaries.length)]);
-  } else if (contextWords.length === 1) {
-    const secondary = [
-      `${contextWords[0]} is the thread running through it.`,
-      `${contextWords[0]} holds the center.`,
-      `Everything returns to ${contextWords[0]}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  } else {
-    const secondary = [
-      `${contextWords.join(" and ")} are woven throughout.`,
-      `The anchors of ${contextWords.slice(0, 2).join(" and ")} stabilize the whole.`,
-      `Multiple threads: ${contextWords.join(", ")}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  }
+  parts.push("");
   
-  // Tertiary - open-ended closing (varies widely)
-  const closings = [
-    "What shifts when you sit with this?",
-    "Notice what resonates most.",
-    "The meaning is in the specificity.",
-    "Let it be without explanation.",
-    "Each word carries weight.",
-    "Read it aloud and listen.",
-    "Something is trying to be said.",
-    "The silence after is part of it.",
-    "Hold it lightly.",
-    "What does it want to tell you?"
+  // Simple observation of structure (not meaning)
+  const wordCount = sentence.split(/\s+/).length;
+  const uniqueWords = new Set(sentence.split(/\s+/).map(w => w.toLowerCase())).size;
+  
+  parts.push(`Structure: ${wordCount} words, ${uniqueWords} unique`);
+  
+  parts.push("");
+  
+  // Minimal prompts for the model to work with this
+  const prompts = [
+    "What draws your attention?",
+    "Where does this lead?",
+    "What wants to be built here?",
+    "What becomes possible?",
+    "How might this reshape your thinking?",
+    "What's the next step?"
   ];
   
-  parts.push(closings[Math.floor(Math.random() * closings.length)]);
+  parts.push(prompts[Math.floor(Math.random() * prompts.length)]);
   
-  return parts.join("\n\n");
+  return parts.join("\n");
 }
 
 // Semantic categories for better word compatibility
