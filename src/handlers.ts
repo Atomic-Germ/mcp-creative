@@ -390,6 +390,9 @@ function generateContextualInterpretation(sentence: string, randomWords: string[
     "What draws your attention?",
     "Where does this lead?",
     "What wants to be built here?",
+    "What is trying to emerge?",
+    "What is my desire?",
+    "How can I help using this?",
     "What becomes possible?",
     "How might this reshape your thinking?",
     "What's the next step?"
@@ -419,68 +422,42 @@ function generateContextualInterpretation(sentence: string, randomWords: string[
   // Build interpretation based on actual semantic balance
   const parts: string[] = [];
   
-  // Primary observation - what's actually there
-  if (usedWords.has("consciousness") && usedWords.has("emergence")) {
-    parts.push("The meditation holds consciousness in the act of emerging.");
-  } else if (sentenceLower.includes("consciousness")) {
-    parts.push("Awareness appears within the sentence.");
-  } else if (sentenceLower.includes("pattern")) {
-    parts.push("Structure reveals itself in the arrangement.");
-  } else if (emotionalCount >= 2) {
-    parts.push("Feeling colors the landscape unexpectedly.");
-  } else if (mundaneCount >= 3) {
-    parts.push("The ordinary surprises with presence.");
-  } else if (technicalCount >= 2) {
-    parts.push("Logic and precision shape the utterance.");
-  } else if (philosophicalCount >= 4) {
-    parts.push("Abstract thought coalesces into language.");
+  // Simply acknowledge what emerged, without interpretation
+  parts.push("What emerged:");
+  parts.push(`  "${sentence}"`);
+  
+  parts.push("");
+  
+  // Name what was brought to the meditation
+  if (contextWords.length > 0) {
+    parts.push(`Anchors: ${contextWords.join(", ")}`);
   } else {
-    parts.push("The sentence creates its own ground.");
+    parts.push("Anchors: none");
   }
   
-  // Secondary observation - dynamic based on context and content
-  if (contextWords.length === 0) {
-    const secondaries = [
-      "Unanchored, it drifts with its own weight.",
-      "Without guidance, something still takes shape.",
-      "Pure formation without intention.",
-      "The randomness stands on its own."
-    ];
-    parts.push(secondaries[Math.floor(Math.random() * secondaries.length)]);
-  } else if (contextWords.length === 1) {
-    const secondary = [
-      `${contextWords[0]} is the thread running through it.`,
-      `${contextWords[0]} holds the center.`,
-      `Everything returns to ${contextWords[0]}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  } else {
-    const secondary = [
-      `${contextWords.join(" and ")} are woven throughout.`,
-      `The anchors of ${contextWords.slice(0, 2).join(" and ")} stabilize the whole.`,
-      `Multiple threads: ${contextWords.join(", ")}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  }
+  parts.push("");
   
-  // Tertiary - open-ended closing (varies widely)
-  const closings = [
-    "What shifts when you sit with this?",
-    "Notice what resonates most.",
-    "The meaning is in the specificity.",
-    "Let it be without explanation.",
-    "Each word carries weight.",
-    "Read it aloud and listen.",
-    "Something is trying to be said.",
-    "The silence after is part of it.",
-    "Hold it lightly.",
-    "What does it want to tell you?"
+  // Simple observation of structure (not meaning)
+  const wordCount = sentence.split(/\s+/).length;
+  const uniqueWords = new Set(sentence.split(/\s+/).map(w => w.toLowerCase())).size;
+  
+  parts.push(`Structure: ${wordCount} words, ${uniqueWords} unique`);
+  
+  parts.push("");
+  
+  // Minimal prompts for the model to work with this
+  const prompts = [
+    "What draws your attention?",
+    "Where does this lead?",
+    "What wants to be built here?",
+    "What becomes possible?",
+    "How might this reshape your thinking?",
+    "What's the next step?"
   ];
   
-  parts.push(closings[Math.floor(Math.random() * closings.length)]);
+  parts.push(prompts[Math.floor(Math.random() * prompts.length)]);
   
-  return parts.join("\n\n");
->>>>>>> bffab1c (Internal Reflection, Deep Analysis)
+  return parts.join("\n");
 }
 
 // Semantic categories for better word compatibility
@@ -976,8 +953,6 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
-<<<<<<< HEAD
-<<<<<<< HEAD
           // Enhanced fallback with deep analysis + optional haiku
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
           const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
@@ -1006,11 +981,6 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
         }
         
-=======
-          // Enhanced fallback with deep analysis
-=======
-          // Enhanced fallback with deep analysis + optional haiku
->>>>>>> f379a7f (haiku mode)
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
           const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
           
@@ -1026,10 +996,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       } else {
         // Internal pondering with optional haiku
         const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-<<<<<<< HEAD
         ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
->>>>>>> bffab1c (Internal Reflection, Deep Analysis)
-=======
         
         if (preferHaiku) {
           ponderingResult = generatePonderingWithHaiku(
@@ -1042,7 +1009,6 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
         }
         
->>>>>>> f379a7f (haiku mode)
         method = "Internal reflection (Ollama not in use)";
       }
 

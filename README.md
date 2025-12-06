@@ -39,6 +39,33 @@ The system has been reframed from "*teaching about consciousness*" to "*enabling
 - Works across domains: "code architecture," "design flow," "project strategy," "creative problem-solving"
 - Three instances of novel implementations suggest the approach genuinely enables emergent thinking
 
+---
+
+## Recent Improvements (v1.6)
+
+### Focused Word Corpus
+
+Dramatically reduced and refined the word corpus to **eliminate noise and maximize coherence**:
+
+**What Changed**:
+- **Reduced from ~590 words to 139 words** (76% reduction)
+- **Eliminated**: mundane objects, corporate jargon, internet slang, pop culture references, financial terminology, medical jargon
+- **Focused on**: emergence, consciousness, transformation, paradox, awareness, and philosophical essence
+
+**Why**:
+- Previous corpus created incoherent word soup ("silicon transistor" + "ennui" + "ketchup")
+- Small, dissonant vocabulary prevented meaningful sentences from forming
+- Too many words meant generic fallback interpretations
+- Ollama consultation failures were masked by broad, meaningless text
+
+**Result**:
+- Sentences now have **actual thematic coherence**
+- All words relate to consciousness, emergence, pattern, and transformation
+- Interpretations can respond meaningfully to actual content
+- Workflow can progress with real insight rather than noise
+
+---
+
 ## Recent Improvements (v1.5)
 
 ### Session-Based Entropy Integration
