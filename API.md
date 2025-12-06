@@ -129,7 +129,7 @@ Takes insights and performs deep contemplation, either via Ollama consultation o
                               // Defaults to last insight
   consult_model?: string;     // Ollama model to use (e.g., "llama2")
   prefer_consult?: boolean;   // Prefer external consultation (default: true)
-}
+  prefer_haiku?: boolean;     // Include haiku synthesis (default: true)
 ```
 
 **Returns:**

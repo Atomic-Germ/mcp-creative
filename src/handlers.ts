@@ -13,6 +13,7 @@ interface MeditationState {
   emergentSentence?: string;
   interpretation?: string;
   timestamp: string;
+  sessionId?: string;
 }
 
 interface InsightState {
@@ -180,10 +181,132 @@ function createSeededRandom(seed: string): () => number {
   };
 }
 
+let currentSessionSeed: string | null = null;
+
 function generatePseudoRandomSeed(): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
+  const seed = `${timestamp}-${random}`;
+  // Only set session on first call (meditation)
+  if (!currentSessionSeed) {
+    currentSessionSeed = seed;
+  }
+  return seed;
+}
+
+function generateFileId(): string {
+  // Generate file ID without changing session
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
   return `${timestamp}-${random}`;
+}
+
+function getCurrentSessionSeed(): string {
+  // Return current session or generate new one
+  if (!currentSessionSeed) {
+    return generatePseudoRandomSeed();
+  }
+  return currentSessionSeed;
+}
+
+function hashStringToNumber(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+function generateHaikuSynthesis(insights: string[], emergentSentence?: string, meditationWords?: string[]): string {
+  const insightText = insights.join("\n");
+  
+  // Generate seed from emergent sentence + session for reproducible but varied randomness
+  const seedSource = emergentSentence || insightText;
+  const primaryHash = hashStringToNumber(seedSource);
+  
+  // Add session entropy to primary hash for additional variation
+  // Same meditation in different sessions can produce different haikus
+  const sessionHash = hashStringToNumber(getCurrentSessionSeed());
+  const combinedHash = primaryHash ^ sessionHash; // XOR combines both influences
+  
+  // Extract themes
+  const hasEmergence = insightText.toLowerCase().includes("emergence");
+  const hasPattern = insightText.toLowerCase().includes("pattern");
+  const hasAnchor = insightText.toLowerCase().includes("anchor");
+  const hasTension = insightText.toLowerCase().includes("tension") || insightText.toLowerCase().includes("paradox");
+  const hasResonance = insightText.toLowerCase().includes("resonance") || insightText.toLowerCase().includes("alignment");
+  
+  // Haiku templates organized by theme
+  const haikus: { [key: string]: string[] } = {
+    anchoredEmergence: [
+      "Fixed point, chaos blooms\nMeaning shaped by boundary\nRandomness finds form",
+      "Within the constraint\nWildness learns to take its shape\nIntention guides drift",
+      "Anchor holds the seed\nChoas spirals inward, forms\nGrowth knows its wild dance"
+    ],
+    pureEmergence: [
+      "No guide, yet pattern\nMeaning crystallizes\nFrom formless to form",
+      "Unmoored, floating free\nYet coherence emerges\nOrder from nowhere",
+      "Without instruction\nThe system speaks itself forth\nNascent meaning blooms"
+    ],
+    pattern: [
+      "Recognition blooms\nStructure calls to structure\nOrder seeks order",
+      "The threads align soft\nPattern whispers to itself\nArrangement is all",
+      "Seeking symmetry\nMind finds what it seeks to find\nForm recognizes form"
+    ],
+    tension: [
+      "Chaos meets the wall\nBoundary births both order\nAnd dissolution",
+      "Push and push-back dance\nNeither victor, neither loss\nTension holds them both",
+      "Two forces embrace\nOpposes that complete\nParadox endures"
+    ],
+    resonance: [
+      "Vibrations align\nEach speaks to what it echoes\nCoherence emerges",
+      "The frequency locks\nMultiple voices as one\nHarmony crystallized",
+      "Like calls to like-kind\nResonance finds its other\nAlignment ignites"
+    ],
+    notheme: [
+      "Fragments resist form\nMeaning evades capture\nYet something was said",
+      "Beyond categorization\nThe sentence stands alone\nDefying framework",
+      "What tries to emerge\nEscapes its own telling\nMystery persists"
+    ]
+  };
+  
+  // Select haiku based on themes
+  let selectedHaikus: string[] = [];
+  
+  if (hasAnchor && hasEmergence) {
+    selectedHaikus = haikus.anchoredEmergence;
+  } else if (hasEmergence && !hasAnchor) {
+    selectedHaikus = haikus.pureEmergence;
+  } else if (hasPattern && !hasEmergence) {
+    selectedHaikus = haikus.pattern;
+  } else if (hasTension) {
+    selectedHaikus = haikus.tension;
+  } else if (hasResonance) {
+    selectedHaikus = haikus.resonance;
+  } else {
+    selectedHaikus = haikus.notheme;
+  }
+  
+  // Select haiku deterministically from combined seed using direct modulo
+  // Uses both sentence content and session entropy
+  const index = Math.abs(combinedHash) % selectedHaikus.length;
+  return selectedHaikus[index];
+}
+
+function generatePonderingWithHaiku(insights: string[], contextWords?: string[], emergentSentence?: string, includeHaiku: boolean = true): string {
+  let output = "";
+  
+  if (includeHaiku) {
+    const haiku = generateHaikuSynthesis(insights, emergentSentence);
+    output += "HAIKU SYNTHESIS\n\n" + haiku + "\n\n---\n\n";
+  }
+  
+  const analysis = generateInternalPondering(insights, contextWords);
+  output += analysis;
+  
+  return output;
 }
 
 function generateDeepAnalysis(insights: string[], meditationWords?: string[]): string {
@@ -644,6 +767,11 @@ export function listTools() {
             seed: {
               type: "string",
               description: "Optional seed for pseudorandom generation"
+            },
+            new_session: {
+              type: "boolean",
+              description: "Start a new session (optional, default: false)",
+              default: false
             }
           },
           required: []
@@ -682,6 +810,11 @@ export function listTools() {
             prefer_consult: {
               type: "boolean",
               description: "Whether to prefer using mcp-consult if available (default: true)",
+              default: true
+            },
+            prefer_haiku: {
+              type: "boolean",
+              description: "Whether to include haiku synthesis of insights (default: true)",
               default: true
             }
           },
@@ -724,6 +857,13 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const contextWords = (args?.context_words as string[]) || [];
       const numRandomWords = (args?.num_random_words as number) || 12;
       const seed = args?.seed as string | undefined;
+      const newSession = args?.new_session as boolean | undefined;
+      
+      // Handle session management
+      if (newSession) {
+        currentSessionSeed = null; // Reset for new session
+      }
+      
       const randomFn = seed ? createSeededRandom(seed) : Math.random;
       const randomWords = generateRandomWords(numRandomWords, randomFn);
       
@@ -753,12 +893,13 @@ export async function callToolHandler(params: { name: string; arguments?: any })
         contextWords,
         emergentSentence,
         interpretation,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        sessionId: getCurrentSessionSeed()
       };
 
       // Save meditation state
       await fs.mkdir(MEMORY_DIR, { recursive: true });
-      const meditationFile = path.join(MEMORY_DIR, `meditation-${generatePseudoRandomSeed()}.json`);
+      const meditationFile = path.join(MEMORY_DIR, `meditation-${generateFileId()}.json`);
       await fs.writeFile(meditationFile, JSON.stringify(lastMeditation, null, 2), "utf-8");
 
       return {
@@ -766,6 +907,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           {
             type: "text",
             text: `🧘 CREATIVE MEDITATION\n\n` +
+                  `Session: ${getCurrentSessionSeed()}\n` +
                   `Random Elements: ${randomWords.join(", ")}\n` +
                   `Context Elements: ${contextWords.join(", ") || "(none)"}\n\n` +
                   `✨ EMERGENT SENTENCE:\n"${emergentSentence}"\n\n` +
@@ -821,7 +963,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       };
 
       // Save insight state
-      const insightFile = path.join(MEMORY_DIR, `insight-${generatePseudoRandomSeed()}.json`);
+      const insightFile = path.join(MEMORY_DIR, `insight-${generateFileId()}.json`);
       await fs.writeFile(insightFile, JSON.stringify(lastInsight, null, 2), "utf-8");
 
       return {
@@ -841,6 +983,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const insightText = args?.insight_text as string | undefined;
       const consultModel = (args?.consult_model as string | undefined) || "kimi-k2-thinking:cloud";
       const preferConsult = args?.prefer_consult !== false;
+      const preferHaiku = args?.prefer_haiku !== false;
 
       const sourceInsight = insightText || (lastInsight ? lastInsight.insights.join("\n") : null);
 
@@ -872,20 +1015,39 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
-          // Enhanced fallback with deep analysis
+          // Enhanced fallback with deep analysis + optional haiku
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-          ponderingResult = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          
+          if (preferHaiku) {
+            const haiku = generateHaikuSynthesis(insightsArray, lastMeditation?.emergentSentence);
+            ponderingResult = `HAIKU SYNTHESIS\n\n${haiku}\n\n---\n\n${deepAnalysis}`;
+          } else {
+            ponderingResult = deepAnalysis;
+          }
+          
           method = "Internal deep analysis (consultation unavailable)";
         }
       } else {
-        // Internal pondering - more substantive than before
+        // Internal pondering with optional haiku
         const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-        ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        
+        if (preferHaiku) {
+          ponderingResult = generatePonderingWithHaiku(
+            insightsArray,
+            lastMeditation?.contextWords,
+            lastMeditation?.emergentSentence,
+            true
+          );
+        } else {
+          ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        }
+        
         method = "Internal reflection (Ollama not in use)";
       }
 
       // Save pondering result
-      const ponderFile = path.join(MEMORY_DIR, `ponder-${generatePseudoRandomSeed()}.json`);
+      const ponderFile = path.join(MEMORY_DIR, `ponder-${generateFileId()}.json`);
       await fs.writeFile(
         ponderFile,
         JSON.stringify({ sourceInsight, ponderingResult, method, timestamp: new Date().toISOString() }, null, 2),
@@ -897,7 +1059,8 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           {
             type: "text",
             text: `🤔 CREATIVE PONDERING\n\n` +
-                  `Method: ${method}\n\n` +
+                  `Method: ${method}\n` +
+                  `Session: ${getCurrentSessionSeed()}\n\n` +
                   `SOURCE INSIGHTS:\n${sourceInsight}\n\n` +
                   `PONDERING:\n${ponderingResult}\n\n` +
                   `(Pondering saved to ${ponderFile})`
