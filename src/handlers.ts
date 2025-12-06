@@ -360,7 +360,6 @@ function generateInternalPondering(insights: string[], contextWords?: string[]):
 }
 
 function generateContextualInterpretation(sentence: string, randomWords: string[], contextWords: string[]): string {
-<<<<<<< HEAD
   const parts: string[] = [];
   
   // Simply acknowledge what emerged, without interpretation
@@ -399,7 +398,6 @@ function generateContextualInterpretation(sentence: string, randomWords: string[
   parts.push(prompts[Math.floor(Math.random() * prompts.length)]);
   
   return parts.join("\n");
-=======
   const sentenceLower = sentence.toLowerCase();
   const wordList = sentence.split(/\s+/);
   
@@ -979,6 +977,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
           // Enhanced fallback with deep analysis + optional haiku
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
           const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
@@ -1009,15 +1008,41 @@ export async function callToolHandler(params: { name: string; arguments?: any })
         
 =======
           // Enhanced fallback with deep analysis
+=======
+          // Enhanced fallback with deep analysis + optional haiku
+>>>>>>> f379a7f (haiku mode)
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-          ponderingResult = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          
+          if (preferHaiku) {
+            const haiku = generateHaikuSynthesis(insightsArray, lastMeditation?.emergentSentence);
+            ponderingResult = `HAIKU SYNTHESIS\n\n${haiku}\n\n---\n\n${deepAnalysis}`;
+          } else {
+            ponderingResult = deepAnalysis;
+          }
+          
           method = "Internal deep analysis (consultation unavailable)";
         }
       } else {
-        // Internal pondering - more substantive than before
+        // Internal pondering with optional haiku
         const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
+<<<<<<< HEAD
         ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
 >>>>>>> bffab1c (Internal Reflection, Deep Analysis)
+=======
+        
+        if (preferHaiku) {
+          ponderingResult = generatePonderingWithHaiku(
+            insightsArray,
+            lastMeditation?.contextWords,
+            lastMeditation?.emergentSentence,
+            true
+          );
+        } else {
+          ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        }
+        
+>>>>>>> f379a7f (haiku mode)
         method = "Internal reflection (Ollama not in use)";
       }
 

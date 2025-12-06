@@ -39,6 +39,53 @@ The system has been reframed from "*teaching about consciousness*" to "*enabling
 - Works across domains: "code architecture," "design flow," "project strategy," "creative problem-solving"
 - Three instances of novel implementations suggest the approach genuinely enables emergent thinking
 
+## Recent Improvements (v1.5)
+
+### Session-Based Entropy Integration
+
+The system now leverages filename entropy (from the `/tmp/mcp-creative-memory/*.json` pattern) to seed meditation sessions:
+
+**Session Tracking**:
+- Each meditation initiates a session with entropy-derived ID (timestamp + random string)
+- Session persists through meditation → insight → ponder workflow  
+- New meditation starts new session (or explicitly with `new_session: true`)
+
+**Enhanced Haiku Variation**:
+- Haiku selection now combines **sentence hash XOR session hash**
+- Same sentence in different sessions produces different haikus
+- Same sentence in same session produces consistent haikus
+- Provides deterministic but varied output without requiring additional user input
+
+**Visible in Output**:
+- Session ID displayed in meditation and ponder results
+- Allows tracking related meditations across a session
+- Stored in saved JSON state for reproducibility
+
+---
+
+## Recent Improvements (v1.4)
+
+### Haiku Synthesis Layer
+
+Pondering results now include **context-aware haiku synthesis** that provides poetic compression of insights:
+
+**Deterministic Variation**: Haikus are selected based on a hash of the actual emergent sentence, ensuring:
+- Same meditation always produces same haiku (reproducible)
+- Different sentences produce different haikus (varied)
+- Thematic alignment (emergent themes guide haiku selection)
+
+**Theme-Responsive Haikus**: Six different haiku sets for different meditation types:
+- **Anchored Emergence**: Constraint shaping chaos (meditations with context words + emergence)
+- **Pure Emergence**: Unguided formation (emergence without context)
+- **Pattern**: Structure recognizing structure
+- **Tension**: Order and chaos in opposition
+- **Resonance**: Alignment and coherence
+- **No Theme**: Meditations that resist categorization
+
+**Control**: Users can enable/disable haikus with `prefer_haiku` parameter (default: true)
+
+---
+
 ## Recent Improvements (v1.3)
 
 ### Robust Fallback System for creative_ponder
