@@ -153,10 +153,17 @@ Takes insights and performs deep contemplation, either via Ollama consultation o
    - Consults Ollama with philosophical system prompt
    
 2. If Ollama unavailable OR `prefer_consult=false` OR no model specified:
-   - Performs internal contemplative analysis
+   - **Internal Reflection**: Substantive analysis examining:
+     - The structure and coherence of insights
+     - How context words shaped the meditation
+     - Contemplative questions to deepen exploration
    
-3. If consultation fails:
-   - Falls back to internal pondering gracefully
+3. If consultation fails (Ollama error):
+   - **Deep Analysis Fallback**: Performs sophisticated analysis including:
+     - Structural examination of how anchored/unanchored emergence works
+     - Thematic resonance and tension analysis
+     - Interpretive implications of the meditation's patterns
+     - Vectors for further exploration with specific probing questions
 
 **Example (with consultation):**
 

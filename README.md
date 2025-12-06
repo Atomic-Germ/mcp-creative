@@ -10,34 +10,46 @@ The creative meditation process consists of three interconnected tools:
 2. **`creative_insight`** - Analyzes the previous meditation to extract meaningful patterns and insights
 3. **`creative_ponder`** - Takes insights and either consults an external Ollama model (via mcp-consult if available) or performs internal contemplation
 
-## Refinements for Coherence (v1.1)
+## Recent Improvements (v1.3)
 
-Recent updates improve the balance between creative chaos and meaningful coherence:
+### Robust Fallback System for creative_ponder
 
-### Algorithm Improvements
+When external consultation is unavailable or fails, the pondering step now provides **substantial analytical value**:
 
-1. **Semantic Categorization**: Words are now organized by semantic category (philosophical, abstract, emotional, technical, etc.), allowing the algorithm to favor thematically compatible selections
+**Internal Reflection** (when `prefer_consult=false`):
+- Analyzes the structure and coherence of insights
+- Examines how context words shaped the meditation
+- Generates contemplative questions for deeper exploration
+- Responsive to insight depth (adapts commentary based on 1-2 vs. 3+ insights)
 
-2. **Category Harmony Scoring**: The sentence validity scoring now includes:
-   - Bonuses for philosophical and abstract word prominence
-   - Penalties for excessive category switching
-   - Preference for meaningful word combinations
-   
-3. **Dual Strategy Generation**: Candidate sentences use two strategies:
-   - **Strategy 1** (50%): Starts with philosophical/context words, then adds supporting random words
-   - **Strategy 2** (50%): Uses distributed selection with bias toward philosophical/abstract positioning
-   
-4. **Enhanced Candidate Evaluation**: Increased from 20 to 60 candidate sentences per meditation, with stronger evaluation criteria prioritizing:
-   - Ideal length (7-11 words for natural phrasing)
-   - Grammatical structure patterns
-   - Semantic coherence
-   - Thematic consistency
+**Deep Analysis Fallback** (when consultation fails):
+- **Structural Examination**: Analyzes how anchored/unanchored emergence functions
+- **Thematic Resonance**: Identifies key tensions (order vs. chaos, coherence, emergence patterns)
+- **Interpretive Implications**: Draws out what the meditation's patterns suggest
+- **Exploration Vectors**: Proposes specific, actionable directions for further contemplation
 
-### Result
+*Previous behavior*: Generic apology that the consultation failed  
+*New behavior*: Delivers real analytical insights that rival a successful consultation
 
-These refinements maintain the creative, exploratory nature of the meditation while producing more coherent, meaningful emergent sentences. Context words are now naturally integrated, and the random elements are selected for thematic resonance rather than pure randomness.
+### v1.2: Refined Interpretation System
+
+The interpretations are now **dynamic and contextual** rather than formulaic:
+
+- **Actual Content Detection**: Responds to what's in the sentence rather than forcing predetermined narrative
+- **Varied Openings**: Different observations based on consciousness/pattern/emotion/technical presence
+- **Smart Context Handling**: Adapts to 0, 1, or multiple context words
+- **Natural Closings**: 10 different open-ended questions instead of repeated templates
+
+### v1.1: Sentence Coherence
+
+1. **Semantic Categorization**: Words grouped by category for thematic compatibility
+2. **Category Harmony Scoring**: Bonuses for philosophical focus, penalties for excessive switching
+3. **Dual Strategy Generation**: 50% context-first, 50% distributed selection with philosophical bias
+4. **Enhanced Evaluation**: 60 candidate sentences per meditation
 
 ---
+
+
 
 
 

@@ -186,6 +186,219 @@ function generatePseudoRandomSeed(): string {
   return `${timestamp}-${random}`;
 }
 
+function generateDeepAnalysis(insights: string[], meditationWords?: string[]): string {
+  const insightText = insights.join("\n");
+  
+  // Extract key themes from insights
+  const hasEmergence = insightText.toLowerCase().includes("emergence");
+  const hasPattern = insightText.toLowerCase().includes("pattern");
+  const hasAnchor = insightText.toLowerCase().includes("anchor");
+  const hasTension = insightText.toLowerCase().includes("tension") || insightText.toLowerCase().includes("paradox");
+  const hasResonance = insightText.toLowerCase().includes("resonance") || insightText.toLowerCase().includes("alignment");
+  
+  const sections: string[] = [];
+  
+  // Opening: Deep analytical frame
+  sections.push("DEEP ANALYSIS");
+  sections.push("");
+  
+  // Structural analysis
+  sections.push("## Structural Examination");
+  if (hasAnchor && hasEmergence) {
+    sections.push("The meditation establishes anchored emergence—meaning that arises within constraints. This creates a bounded exploration space where randomness operates within intentional limits.");
+  } else if (hasEmergence) {
+    sections.push("Emergence without explicit anchoring suggests meaning arising from pure formation—the system discovering its own coherence without external guidance.");
+  } else if (hasPattern) {
+    sections.push("Pattern recognition dominates this meditation. The insights gravitate toward structure-finding, suggesting a meditation concerned with organization and arrangement rather than pure emergence.");
+  } else {
+    sections.push("The meditation resists simple categorization. Its structure emerges from the interplay of disparate elements without clear thematic dominance.");
+  }
+  sections.push("");
+  
+  // Thematic analysis
+  sections.push("## Thematic Resonance");
+  const themes: string[] = [];
+  if (hasTension) {
+    themes.push("Order vs. Chaos");
+  }
+  if (hasResonance) {
+    themes.push("Coherence & Alignment");
+  }
+  if (hasEmergence && hasPattern) {
+    themes.push("Spontaneous Organization");
+  }
+  if (hasAnchor) {
+    themes.push("Intentional Grounding");
+  }
+  if (themes.length > 0) {
+    sections.push(`Key tensions: ${themes.join(", ")}`);
+  } else {
+    sections.push("Themes resist categorization; the meditation escapes thematic containment.");
+  }
+  sections.push("");
+  
+  // Interpretive implications
+  sections.push("## Interpretive Implications");
+  
+  if (hasAnchor && hasTension) {
+    sections.push("The meditation suggests that constraint and chaos are not opposites but partners. Anchors don't eliminate randomness; they shape how randomness unfolds.");
+  } else if (hasEmergence && !hasAnchor) {
+    sections.push("What emerges here does so without predetermined structure. This suggests a meditation on genuine novelty—formation that wasn't implicit in the starting conditions.");
+  } else if (hasPattern) {
+    sections.push("The consistent recurrence of pattern suggests this meditation is fundamentally about recognition, arrangement, and structure-detection rather than genuine emergence.");
+  } else {
+    sections.push("The meditation resists unified interpretation. This itself may be the point—a meditation that escapes singular meaning-making.");
+  }
+  sections.push("");
+  
+  // Questions for further exploration
+  sections.push("## Vectors for Exploration");
+  sections.push("• What happens if you reverse the direction—start with meaning and decompose it into randomness?");
+  sections.push("• Which insights surprised you most? What does that surprise indicate?");
+  sections.push("• Can you find a single word that contains all the tensions present here?");
+  if (meditationWords && meditationWords.length > 0) {
+    sections.push(`• The words ${meditationWords.slice(0, 2).join(" and ")} appeared in your meditation. Do they carry specific weight or meaning to you?`);
+  }
+  sections.push("");
+  
+  return sections.join("\n");
+}
+
+function generateInternalPondering(insights: string[], contextWords?: string[]): string {
+  const sections: string[] = [];
+  
+  sections.push("INTERNAL REFLECTION");
+  sections.push("");
+  
+  sections.push("The insights gathered:");
+  sections.push("");
+  insights.forEach((insight, i) => {
+    sections.push(`${i + 1}. ${insight}`);
+  });
+  
+  sections.push("");
+  sections.push("Contemplating these together...");
+  sections.push("");
+  
+  // Generate reflection based on insight count and content
+  if (insights.length >= 4) {
+    sections.push("Multiple layers suggest a rich meditation. The insights layer upon each other, creating depth. When taken together, they form a kind of sculptural object—you can walk around it, seeing different faces.");
+  } else if (insights.length === 1) {
+    sections.push("A single insight dominates. This clarity is its own kind of power—the meditation has distilled itself to essence.");
+  } else {
+    sections.push("Two or three insights create a small constellation. They relate to each other, forming patterns and tensions.");
+  }
+  
+  sections.push("");
+  
+  // Contextual reflection
+  if (contextWords && contextWords.length > 0) {
+    sections.push(`The anchoring words—${contextWords.join(", ")}—shaped the formation. They acted as gravity wells around which meaning accumulated.`);
+  } else {
+    sections.push("Without anchors, the meditation drifted freely. Its structure is entirely emergent, unguided by intention.");
+  }
+  
+  sections.push("");
+  sections.push("Questions that arise:");
+  const questions = [
+    "What does the meditation want to say that hasn't been said?",
+    "If you had to choose one insight as the 'truest,' which would it be and why?",
+    "What would change if you inverted one of these insights?",
+    "Which insight connects most directly to your own experience?"
+  ];
+  
+  questions.forEach(q => sections.push(`• ${q}`));
+  
+  sections.push("");
+  
+  return sections.join("\n");
+}
+
+function generateContextualInterpretation(sentence: string, randomWords: string[], contextWords: string[]): string {
+  const sentenceLower = sentence.toLowerCase();
+  const wordList = sentence.split(/\s+/);
+  
+  // Count word categories and collect actual words used
+  let philosophicalCount = 0;
+  let mundaneCount = 0;
+  let emotionalCount = 0;
+  let technicalCount = 0;
+  const usedWords = new Set(wordList.map(w => w.toLowerCase().replace(/[.,;:!?]/g, "")));
+  
+  for (const word of wordList) {
+    const cat = getWordCategory(word.toLowerCase());
+    if (cat === "philosophical" || cat === "abstract") philosophicalCount++;
+    if (cat === "mundane") mundaneCount++;
+    if (cat === "emotional") emotionalCount++;
+    if (cat === "technical") technicalCount++;
+  }
+  
+  // Build interpretation based on actual semantic balance
+  const parts: string[] = [];
+  
+  // Primary observation - what's actually there
+  if (usedWords.has("consciousness") && usedWords.has("emergence")) {
+    parts.push("The meditation holds consciousness in the act of emerging.");
+  } else if (sentenceLower.includes("consciousness")) {
+    parts.push("Awareness appears within the sentence.");
+  } else if (sentenceLower.includes("pattern")) {
+    parts.push("Structure reveals itself in the arrangement.");
+  } else if (emotionalCount >= 2) {
+    parts.push("Feeling colors the landscape unexpectedly.");
+  } else if (mundaneCount >= 3) {
+    parts.push("The ordinary surprises with presence.");
+  } else if (technicalCount >= 2) {
+    parts.push("Logic and precision shape the utterance.");
+  } else if (philosophicalCount >= 4) {
+    parts.push("Abstract thought coalesces into language.");
+  } else {
+    parts.push("The sentence creates its own ground.");
+  }
+  
+  // Secondary observation - dynamic based on context and content
+  if (contextWords.length === 0) {
+    const secondaries = [
+      "Unanchored, it drifts with its own weight.",
+      "Without guidance, something still takes shape.",
+      "Pure formation without intention.",
+      "The randomness stands on its own."
+    ];
+    parts.push(secondaries[Math.floor(Math.random() * secondaries.length)]);
+  } else if (contextWords.length === 1) {
+    const secondary = [
+      `${contextWords[0]} is the thread running through it.`,
+      `${contextWords[0]} holds the center.`,
+      `Everything returns to ${contextWords[0]}.`
+    ];
+    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
+  } else {
+    const secondary = [
+      `${contextWords.join(" and ")} are woven throughout.`,
+      `The anchors of ${contextWords.slice(0, 2).join(" and ")} stabilize the whole.`,
+      `Multiple threads: ${contextWords.join(", ")}.`
+    ];
+    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
+  }
+  
+  // Tertiary - open-ended closing (varies widely)
+  const closings = [
+    "What shifts when you sit with this?",
+    "Notice what resonates most.",
+    "The meaning is in the specificity.",
+    "Let it be without explanation.",
+    "Each word carries weight.",
+    "Read it aloud and listen.",
+    "Something is trying to be said.",
+    "The silence after is part of it.",
+    "Hold it lightly.",
+    "What does it want to tell you?"
+  ];
+  
+  parts.push(closings[Math.floor(Math.random() * closings.length)]);
+  
+  return parts.join("\n\n");
+}
+
 // Semantic categories for better word compatibility
 const WORD_CATEGORIES: { [key: string]: string } = {};
 (() => {
@@ -533,7 +746,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       }
 
       // Interpret the emergent sentence
-      const interpretation = `From the interplay of random (${randomWords.slice(0, 5).join(", ")}...) and contextual elements (${contextWords.join(", ") || "none"}), emerges: "${emergentSentence}"\n\nThis synthesis suggests a contemplation on ${emergentSentence.toLowerCase().includes("void") ? "emptiness and potential" : emergentSentence.toLowerCase().includes("resonance") ? "harmonic connections" : "emergent patterns"}. The meditation reveals how ${contextWords.length > 0 ? "structured intention" : "pure chaos"} interacts with randomness to birth meaning.`;
+      const interpretation = generateContextualInterpretation(emergentSentence, randomWords, contextWords);
 
       lastMeditation = {
         randomWords,
@@ -659,20 +872,16 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
-          // Fall back to internal pondering
-          ponderingResult = `While attempting to consult external wisdom, the connection faltered. Yet this failure itself is instructive: ${sourceInsight}\n\nIn the silence of failed consultation, we find that the insights speak for themselves. They point toward the intersection of randomness and intention, where meaning crystallizes from chaos.`;
-          method = "Internal contemplation (consultation failed)";
+          // Enhanced fallback with deep analysis
+          const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
+          ponderingResult = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          method = "Internal deep analysis (consultation unavailable)";
         }
       } else {
-        // Internal "Ask" style pondering
-        ponderingResult = `Pondering in solitude:\n\n${sourceInsight}\n\n` +
-          `These insights form a constellation of meaning. They suggest that:\n\n` +
-          `• Emergence is not random but arises from the interplay of chaos and structure\n` +
-          `• Meaning-making is an active process, not passive reception\n` +
-          `• The boundary between signal and noise is itself a creative space\n` +
-          `• What appears as randomness may contain hidden order waiting to be perceived\n\n` +
-          `The meditation-insight cycle mirrors consciousness itself: fragments coalescing into coherence, then dissolving back into potential.`;
-        method = consultAvailable ? "Internal contemplation (no model specified)" : "Internal contemplation (Ollama unavailable)";
+        // Internal pondering - more substantive than before
+        const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
+        ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        method = "Internal reflection (Ollama not in use)";
       }
 
       // Save pondering result
