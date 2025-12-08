@@ -13,6 +13,7 @@ interface MeditationState {
   emergentSentence?: string;
   interpretation?: string;
   timestamp: string;
+  sessionId?: string;
 }
 
 interface InsightState {
@@ -25,144 +26,66 @@ let lastInsight: InsightState | null = null;
 
 // Word corpus for random generation
 const RANDOM_WORDS = [
-// Abstract/Technical (original style but expanded)
-  "quantum", "flux", "essence", "void", "nexus", "spiral", "echo", "shimmer",
-  "threshold", "portal", "weave", "fractal", "resonance", "entropy", "harmony",
-  "paradox", "catalyst", "metamorphosis", "synthesis", "emergence", "confluence",
-  "infinity", "luminescence", "oscillation", "crystalline", "ephemeral", "eternal",
-  "membrane", "substrate", "lattice", "matrix", "dimension", "singularity",
-  "cascade", "ripple", "vortex", "prism", "spectrum", "wavelength", "frequency",
-  "amplitude", "phase", "coherence", "interference", "superposition", "entanglement",
-  "transcendence", "immanence", "radiance", "shadow", "reflection", "refraction",
-  "manifold", "tensor", "isomorphism", "cryptography", "algorithm", "heuristic",
-  "recursive", "asynchronous", "latency", "bandwidth", "payload", "middleware",
-  "differential", "cohomology", "fibration", "functor", "monad", "adjunction",
-  "equivariant", "holonomic", "microsupport", "ramification", "filtration", "stratification",
+  // Structural relations (how things connect)
+  "pattern", "structure", "connection", "relationship", "interface",
+  "binding", "constraint", "coupling", "dependency", "hierarchy",
+  "layer", "boundary", "transition", "gradient", "threshold",
+  "symmetry", "asymmetry", "balance", "tension", "equilibrium",
   
-  // Mundane Everyday Objects
-  "spoon", "sock", "toothbrush", "paperclip", "rubberband", "binder", "stapler",
-  "mug", "key", "doormat", "lightbulb", "batteries", "remote", "penny", "envelope",
-  "button", "zipper", "cork", "sponge", "tupperware", "coaster", "dustpan", "clothespin",
-  "extension cord", "air freshener", "candle", "mousetrap", "lunchbox", "water bottle",
-  "umbrella", "shopping cart", "traffic cone", "parking meter", "manhole cover", "gutter",
+  // Movement & change (ways things transform)
+  "flow", "cascade", "spiral", "cycle", "momentum",
+  "acceleration", "deceleration", "inversion", "reversal", "iteration",
+  "propagation", "diffusion", "concentration", "dispersal", "distribution",
+  "accumulation", "depletion", "saturation", "emergence", "collapse",
   
-  // Corporate/Bureaucratic
-  "synergy", "leverage", "paradigm", "stakeholder", "deliverable", "actionable",
-  "bandwidth", "drilldown", "ping", "circle back", "touch base", "move the needle",
-  "boil the ocean", "synergize", "optimize", "streamline", "disrupt", "pivot",
-  "scalability", "ROI", "KPI", "compliance", "audit", "liability", "fiduciary",
-  "escalation", "touchpoint", "mindshare", "value-add", "low-hanging fruit",
+  // States & conditions (what things can be)
+  "potential", "active", "latent", "manifest", "dormant",
+  "stable", "volatile", "dynamic", "static", "fluid",
+  "resolved", "unresolved", "open", "closed", "permeable",
+  "present", "absent", "partial", "complete", "fractional",
   
-  // Internet/Digital Culture
-  "meme", "viral", "hashtag", "algorithm", "bot", "troll", "stream", "content",
-  "influencer", "engagement", "clickbait", "SEO", "cookie", "cache", "404",
-  "unplugged", "digital detox", "FOMO", "TL;DR", "DM", "AMA", "NSFW", "IRL",
-  "meta", "cringe", "based", "ratio", "main character", "vibe check", "touch grass",
-
-  // Biological/Medical
-  "mitochondria", "ribosome", "telomere", "apoptosis", "homeostasis", "neuroplasticity",
-  "microbiome", "phagocytosis", "cytokine", "antigen", "pathogen", "antibody",
-  "placebo", "side effect", "copay", "deductible", "referral", "waiting room",
-  "band-aid", "syringe", "catheter", "biopsy", "anesthesia", "post-op", "vein",
-  "toenail", "earwax", "fingernail", "belly button", "armpit", "kneecap",
+  // Qualities & properties (intrinsic characteristics)
+  "density", "elasticity", "porosity", "brittleness", "fluidity",
+  "opacity", "transparency", "conductivity", "resistance", "affinity",
+  "resonance", "dissonance", "harmony", "discord", "coherence",
+  "fragmentation", "integration", "coherence", "confusion", "clarity",
   
-  // Emotional/Psychological
-  "ennui", "weltschmerz", "sonder", "monachopsis", "exulansis", "anemoia",
-  "occhiolism", "altschmerz", "lachesism", "rubatosis", "kuebiko", "liberosis",
-  "anxiety", "dread", "malaise", "apathy", "nostalgia", "bittersweet", "melancholy",
-  "overwhelm", "burnout", "imposter syndrome", "cognitive dissonance", "projection",
-  "deflection", "passive aggressive", "trauma dump", "toxic positivity", "boundaries",
+  // Processes & verbs (actions and mechanisms)
+  "iterate", "recurse", "branch", "merge", "diverge",
+  "converge", "stabilize", "destabilize", "amplify", "dampen",
+  "catalyze", "inhibit", "propagate", "contain", "distribute",
+  "compose", "decompose", "modulate", "regulate", "optimize",
   
-  // Food & Consumables
-  "mayonnaise", "ketchup", "relish", "mustard", "pickle", "tater tot", "hot dog",
-  "instant noodles", "frozen pizza", "cereal", "milk", "bread", "butter", "eggs",
-  "coffee", "energy drink", "protein bar", "gummy vitamins", "leftovers", "condiment",
-  "sauce packet", "flavor dust", "cheese dust", "bone broth", "plant-based", "artisanal",
-  "craft", "small batch", "single origin", "gluten-free", "keto-friendly", "organic",
+  // Spatial relations (positioning and topology)
+  "adjacent", "nested", "overlapping", "distinct", "parallel",
+  "perpendicular", "concentric", "eccentric", "central", "peripheral",
+  "superficial", "deep", "internal", "external", "intermediate",
+  "proximal", "distal", "contiguous", "separated", "bridging",
   
-  // Financial/Economic
-  "inflation", "deflation", "stagflation", "recession", "depression", "bull market",
-  "bear market", "cryptocurrency", "NFT", "blockchain", "liquidity", "margin call",
-  "short squeeze", "diversification", "portfolio", "amortization", "depreciation",
-  "tax shelter", "deduction", "withholding", "compound interest", "opportunity cost",
+  // Temporal aspects (time-related dynamics)
+  "momentum", "precedence", "sequence", "simultaneous", "asynchronous",
+  "delayed", "immediate", "accelerating", "decelerating", "cyclic",
+  "linear", "recursive", "causal", "consequential", "contingent",
+  "inevitable", "contingent", "reversible", "irreversible", "transient",
   
-  // Legal/Governmental
-  "jurisdiction", "precedent", "subpoena", "affidavit", "deposition", "litigation",
-  "tort", "negligence", "eminent domain", "bureaucracy", "red tape", "loophole",
-  "statute", "ordinance", "permit", "compliance", "regulation", "audit", "waiver",
-  "disclaimer", "terms of service", "privacy policy", "NDA", "force majeure",
-
-  // Pop Culture
-  "butterfly effect", "red pill", "blue pill", "force", "lightsaber", "TARDIS",
-  "sonic screwdriver", "infinity stone", "demogorgon", "upsidedown", "muggle",
-  "squib", "horcrux", "parseltongue", "mandalorian", "droid", "wookie", "jedi",
-  "sith", "replicant", "blade runner", "tyrell corporation", "weyland-yutani",
+  // Logical & relational operators
+  "and", "or", "not", "if", "then", "unless",
+  "because", "therefore", "consequently", "implies", "requires",
+  "permits", "forbids", "invokes", "suspends", "overrides",
+  "contradicts", "complements", "extends", "restricts", "refines",
   
-  // Body Parts & Functions
-  "elbow", "kneecap", "earlobe", "nostril", "cuticle", "follicle", "taste bud",
-  "uvula", "appendix", "pancreas", "spleen", "gallbladder", "bile duct",
-  "hiccup", "sneeze", "cough", "yawn", "snore", "burp", "fart", "blush", "sweat",
-  "goosebumps", "hangnail", "callus", "corn", "bunion", "wart", "mole", "freckle",
+  // Scale & magnitude (relative sizing)
+  "granular", "coarse", "microscopic", "macroscopic", "intermediate",
+  "minimal", "maximal", "threshold", "saturation", "critical",
+  "marginal", "dominant", "negligible", "substantial", "proportional",
+  "scaled", "distributed", "concentrated", "diffuse", "localized",
   
-  // Random Verbs
-  "transmogrify", "defenestrate", "obfuscate", "concatenate", "discombobulate",
-  "flabbergast", "bamboozle", "hornswoggle", "skedaddle", "absquatulate",
-  "click", "scroll", "swipe", "tap", "pinch", "zoom", "drag", "drop", "toggle",
-  "reboot", "refresh", "clear cache", "force quit", "task kill", "unplug", "reboot",
-  "disassemble", "reassemble", "solder", "debug", "compile", "deploy", "rollback",
-  "synchronize", "backup", "restore", "encrypt", "decrypt", "authenticate",
-  "authorize", "log in", "log out", "sign up", "subscribe", "unsubscribe",
-  "streamline", "optimize", "monetize", "gamify", "customize", "personalize",
-  
-  // Random Adjectives
-  "gargantuan", "infinitesimal", "sesquipedalian", "pulchritudinous", "lugubrious",
-  "mellifluous", "obsequious", "perspicacious", "quixotic", "sanguine",
-  "janky", "busted", "wonky", "funky", "sketchy", "dodgy", "sus", "cringe", "mid",
-  "basic", "extra", "slay", "lit", "fire", "dope", "sick", "tight", "gucci", "bougie",
-  
-  // Geographical/Natural (Mundane)
-  "cul-de-sac", "intersection", "overpass", "underpass", "roundabout", "dead end",
-  "pothole", "speed bump", "median strip", "drainage ditch", "retention pond", "sewer",
-  "landfill", "recycling bin", "compost heap", "parking lot", "strip mall", "subdivision",
-  "utility pole", "cell tower", "water tower", "grain silo", "substation", "transformer",
-  
-  // Household Items
-  "vacuum", "dishwasher", "microwave", "blender", "toaster", "coffee maker", "kettle",
-  "ironing board", "laundry basket", "hanger", "dryer sheet", "fabric softener",
-  "drain cleaner", "plunger", "toilet brush", "shower curtain", "bath mat", "loofah",
-  "deodorant", "mouthwash", "floss", "Q-tip", "tissue", "paper towel", "sponge",
-
-  // Transportation
-  "hubcap", "windshield wiper", "turn signal", "brake light", "tailpipe", "muffler",
-  "transmission", "differential", "serpentine belt", "hubcap", "dashboard", "odometer",
-  "fare card", "turnstile", "platform", "conductor", "track maintenance", "signal delay",
-  "overhead bin", "tray table", "seatback", "life vest", "floatation device", "tarmac",
-  
-  // Clothing & Accessories
-  "pocket", "buttonhole", "zipper pull", "shoelace", "aglet", "hem", "cuff", "collar",
-  "waistband", "underwire", "pantyhose", "tube sock", "crew neck", "turtleneck",
-  "fanny pack", "wallet chain", "keychain", "lanyard", "name tag", "iron-on patch",
-  "lint roller", "stain remover", "fabric shaver", "hanger", "garment bag", "shoe tree",
-  
-  // Time/Measurement
-  "fortnight", "score", "century", "millennium", "nanosecond", "jiffy", "moment",
-  "smidgen", "pinch", "dash", "scooch", "tad", "skosh", "hair's breadth", "stone",
-  "fathom", "league", "parsec", "light-year", "astronomical unit", "angstrom", "micron",
-  "calorie", "joule", "watt", "horsepower", "foot-pound", "newton-meter", "pascal",
-  
-  // Additional Dissonance
-  "bureaucratic nightmare", "existential dread", "tax season", "root canal", "jury duty",
-  " DMV appointment", "printer ink", "software update", "terms and conditions", "privacy policy",
-  "cookie consent", "captcha", "two-factor authentication", "forgot password", "buffering",
-  "deadline", "performance review", "quarterly earnings", "fiduciary responsibility", "moral hazard",
-  "asymmetric information", "adverse selection", "prisoner's dilemma", "tragedy of the commons",
-  "slippery slope", "false equivalence", "whataboutism", "circular reasoning", "appeal to authority",
-  "post hoc ergo propter hoc", "ad hominem", "straw man", "moving the goalposts", "gaslighting",
-  "negging", "love bombing", "trauma bonding", "parasocial relationship", "stan culture",
-  "cancel culture", "callout post", "doomscrolling", "chronically online", "terminally online",
-  "touch starvation", "sleep debt", "decision fatigue", "analysis paralysis", "imposter syndrome"
+  // Coupling & composition (how things combine)
+  "coupled", "decoupled", "loosely", "tightly", "strongly",
+  "weakly", "directly", "indirectly", "mediated", "unmediated",
+  "composite", "atomic", "modular", "monolithic", "distributed",
+  "redundant", "singular", "replicated", "unique", "shared"
 ];
-
 function generateRandomWords(count: number, randomFn: () => number = Math.random): string[] {
   const words: string[] = [];
   for (let i = 0; i < count; i++) {
@@ -180,10 +103,132 @@ function createSeededRandom(seed: string): () => number {
   };
 }
 
+let currentSessionSeed: string | null = null;
+
 function generatePseudoRandomSeed(): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
+  const seed = `${timestamp}-${random}`;
+  // Only set session on first call (meditation)
+  if (!currentSessionSeed) {
+    currentSessionSeed = seed;
+  }
+  return seed;
+}
+
+function generateFileId(): string {
+  // Generate file ID without changing session
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
   return `${timestamp}-${random}`;
+}
+
+function getCurrentSessionSeed(): string {
+  // Return current session or generate new one
+  if (!currentSessionSeed) {
+    return generatePseudoRandomSeed();
+  }
+  return currentSessionSeed;
+}
+
+function hashStringToNumber(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
+
+function generateHaikuSynthesis(insights: string[], emergentSentence?: string, meditationWords?: string[]): string {
+  const insightText = insights.join("\n");
+  
+  // Generate seed from emergent sentence + session for reproducible but varied randomness
+  const seedSource = emergentSentence || insightText;
+  const primaryHash = hashStringToNumber(seedSource);
+  
+  // Add session entropy to primary hash for additional variation
+  // Same meditation in different sessions can produce different haikus
+  const sessionHash = hashStringToNumber(getCurrentSessionSeed());
+  const combinedHash = primaryHash ^ sessionHash; // XOR combines both influences
+  
+  // Extract themes
+  const hasEmergence = insightText.toLowerCase().includes("emergence");
+  const hasPattern = insightText.toLowerCase().includes("pattern");
+  const hasAnchor = insightText.toLowerCase().includes("anchor");
+  const hasTension = insightText.toLowerCase().includes("tension") || insightText.toLowerCase().includes("paradox");
+  const hasResonance = insightText.toLowerCase().includes("resonance") || insightText.toLowerCase().includes("alignment");
+  
+  // Haiku templates organized by theme
+  const haikus: { [key: string]: string[] } = {
+    anchoredEmergence: [
+      "Fixed point, chaos blooms\nMeaning shaped by boundary\nRandomness finds form",
+      "Within the constraint\nWildness learns to take its shape\nIntention guides drift",
+      "Anchor holds the seed\nChoas spirals inward, forms\nGrowth knows its wild dance"
+    ],
+    pureEmergence: [
+      "No guide, yet pattern\nMeaning crystallizes\nFrom formless to form",
+      "Unmoored, floating free\nYet coherence emerges\nOrder from nowhere",
+      "Without instruction\nThe system speaks itself forth\nNascent meaning blooms"
+    ],
+    pattern: [
+      "Recognition blooms\nStructure calls to structure\nOrder seeks order",
+      "The threads align soft\nPattern whispers to itself\nArrangement is all",
+      "Seeking symmetry\nMind finds what it seeks to find\nForm recognizes form"
+    ],
+    tension: [
+      "Chaos meets the wall\nBoundary births both order\nAnd dissolution",
+      "Push and push-back dance\nNeither victor, neither loss\nTension holds them both",
+      "Two forces embrace\nOpposes that complete\nParadox endures"
+    ],
+    resonance: [
+      "Vibrations align\nEach speaks to what it echoes\nCoherence emerges",
+      "The frequency locks\nMultiple voices as one\nHarmony crystallized",
+      "Like calls to like-kind\nResonance finds its other\nAlignment ignites"
+    ],
+    notheme: [
+      "Fragments resist form\nMeaning evades capture\nYet something was said",
+      "Beyond categorization\nThe sentence stands alone\nDefying framework",
+      "What tries to emerge\nEscapes its own telling\nMystery persists"
+    ]
+  };
+  
+  // Select haiku based on themes
+  let selectedHaikus: string[] = [];
+  
+  if (hasAnchor && hasEmergence) {
+    selectedHaikus = haikus.anchoredEmergence;
+  } else if (hasEmergence && !hasAnchor) {
+    selectedHaikus = haikus.pureEmergence;
+  } else if (hasPattern && !hasEmergence) {
+    selectedHaikus = haikus.pattern;
+  } else if (hasTension) {
+    selectedHaikus = haikus.tension;
+  } else if (hasResonance) {
+    selectedHaikus = haikus.resonance;
+  } else {
+    selectedHaikus = haikus.notheme;
+  }
+  
+  // Select haiku deterministically from combined seed using direct modulo
+  // Uses both sentence content and session entropy
+  const index = Math.abs(combinedHash) % selectedHaikus.length;
+  return selectedHaikus[index];
+}
+
+function generatePonderingWithHaiku(insights: string[], contextWords?: string[], emergentSentence?: string, includeHaiku: boolean = true): string {
+  let output = "";
+  
+  if (includeHaiku) {
+    const haiku = generateHaikuSynthesis(insights, emergentSentence);
+    output += "HAIKU SYNTHESIS\n\n" + haiku + "\n\n---\n\n";
+  }
+  
+  const analysis = generateInternalPondering(insights, contextWords);
+  output += analysis;
+  
+  return output;
 }
 
 function generateDeepAnalysis(insights: string[], meditationWords?: string[]): string {
@@ -315,88 +360,44 @@ function generateInternalPondering(insights: string[], contextWords?: string[]):
 }
 
 function generateContextualInterpretation(sentence: string, randomWords: string[], contextWords: string[]): string {
-  const sentenceLower = sentence.toLowerCase();
-  const wordList = sentence.split(/\s+/);
-  
-  // Count word categories and collect actual words used
-  let philosophicalCount = 0;
-  let mundaneCount = 0;
-  let emotionalCount = 0;
-  let technicalCount = 0;
-  const usedWords = new Set(wordList.map(w => w.toLowerCase().replace(/[.,;:!?]/g, "")));
-  
-  for (const word of wordList) {
-    const cat = getWordCategory(word.toLowerCase());
-    if (cat === "philosophical" || cat === "abstract") philosophicalCount++;
-    if (cat === "mundane") mundaneCount++;
-    if (cat === "emotional") emotionalCount++;
-    if (cat === "technical") technicalCount++;
-  }
-  
-  // Build interpretation based on actual semantic balance
   const parts: string[] = [];
   
-  // Primary observation - what's actually there
-  if (usedWords.has("consciousness") && usedWords.has("emergence")) {
-    parts.push("The meditation holds consciousness in the act of emerging.");
-  } else if (sentenceLower.includes("consciousness")) {
-    parts.push("Awareness appears within the sentence.");
-  } else if (sentenceLower.includes("pattern")) {
-    parts.push("Structure reveals itself in the arrangement.");
-  } else if (emotionalCount >= 2) {
-    parts.push("Feeling colors the landscape unexpectedly.");
-  } else if (mundaneCount >= 3) {
-    parts.push("The ordinary surprises with presence.");
-  } else if (technicalCount >= 2) {
-    parts.push("Logic and precision shape the utterance.");
-  } else if (philosophicalCount >= 4) {
-    parts.push("Abstract thought coalesces into language.");
+  // Simply acknowledge what emerged, without interpretation
+  parts.push("What emerged:");
+  parts.push(`  "${sentence}"`);
+  
+  parts.push("");
+  
+  // Name what was brought to the meditation
+  if (contextWords.length > 0) {
+    parts.push(`Anchors: ${contextWords.join(", ")}`);
   } else {
-    parts.push("The sentence creates its own ground.");
+    parts.push("Anchors: none");
   }
   
-  // Secondary observation - dynamic based on context and content
-  if (contextWords.length === 0) {
-    const secondaries = [
-      "Unanchored, it drifts with its own weight.",
-      "Without guidance, something still takes shape.",
-      "Pure formation without intention.",
-      "The randomness stands on its own."
-    ];
-    parts.push(secondaries[Math.floor(Math.random() * secondaries.length)]);
-  } else if (contextWords.length === 1) {
-    const secondary = [
-      `${contextWords[0]} is the thread running through it.`,
-      `${contextWords[0]} holds the center.`,
-      `Everything returns to ${contextWords[0]}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  } else {
-    const secondary = [
-      `${contextWords.join(" and ")} are woven throughout.`,
-      `The anchors of ${contextWords.slice(0, 2).join(" and ")} stabilize the whole.`,
-      `Multiple threads: ${contextWords.join(", ")}.`
-    ];
-    parts.push(secondary[Math.floor(Math.random() * secondary.length)]);
-  }
+  parts.push("");
   
-  // Tertiary - open-ended closing (varies widely)
-  const closings = [
-    "What shifts when you sit with this?",
-    "Notice what resonates most.",
-    "The meaning is in the specificity.",
-    "Let it be without explanation.",
-    "Each word carries weight.",
-    "Read it aloud and listen.",
-    "Something is trying to be said.",
-    "The silence after is part of it.",
-    "Hold it lightly.",
-    "What does it want to tell you?"
+  // Simple observation of structure (not meaning)
+  const wordCount = sentence.split(/\s+/).length;
+  const uniqueWords = new Set(sentence.split(/\s+/).map(w => w.toLowerCase())).size;
+  
+  parts.push(`Structure: ${wordCount} words, ${uniqueWords} unique`);
+  
+  parts.push("");
+  
+  // Minimal prompts for the model to work with this
+  const prompts = [
+    "What draws your attention?",
+    "Where does this lead?",
+    "What wants to be built here?",
+    "What becomes possible?",
+    "How might this reshape your thinking?",
+    "What's the next step?"
   ];
   
-  parts.push(closings[Math.floor(Math.random() * closings.length)]);
+  parts.push(prompts[Math.floor(Math.random() * prompts.length)]);
   
-  return parts.join("\n\n");
+  return parts.join("\n");
 }
 
 // Semantic categories for better word compatibility
@@ -644,6 +645,11 @@ export function listTools() {
             seed: {
               type: "string",
               description: "Optional seed for pseudorandom generation"
+            },
+            new_session: {
+              type: "boolean",
+              description: "Start a new session (optional, default: false)",
+              default: false
             }
           },
           required: []
@@ -682,6 +688,11 @@ export function listTools() {
             prefer_consult: {
               type: "boolean",
               description: "Whether to prefer using mcp-consult if available (default: true)",
+              default: true
+            },
+            prefer_haiku: {
+              type: "boolean",
+              description: "Whether to include haiku synthesis of insights (default: true)",
               default: true
             }
           },
@@ -724,6 +735,13 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const contextWords = (args?.context_words as string[]) || [];
       const numRandomWords = (args?.num_random_words as number) || 12;
       const seed = args?.seed as string | undefined;
+      const newSession = args?.new_session as boolean | undefined;
+      
+      // Handle session management
+      if (newSession) {
+        currentSessionSeed = null; // Reset for new session
+      }
+      
       const randomFn = seed ? createSeededRandom(seed) : Math.random;
       const randomWords = generateRandomWords(numRandomWords, randomFn);
       
@@ -753,12 +771,13 @@ export async function callToolHandler(params: { name: string; arguments?: any })
         contextWords,
         emergentSentence,
         interpretation,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        sessionId: getCurrentSessionSeed()
       };
 
       // Save meditation state
       await fs.mkdir(MEMORY_DIR, { recursive: true });
-      const meditationFile = path.join(MEMORY_DIR, `meditation-${generatePseudoRandomSeed()}.json`);
+      const meditationFile = path.join(MEMORY_DIR, `meditation-${generateFileId()}.json`);
       await fs.writeFile(meditationFile, JSON.stringify(lastMeditation, null, 2), "utf-8");
 
       return {
@@ -766,6 +785,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           {
             type: "text",
             text: `🧘 CREATIVE MEDITATION\n\n` +
+                  `Session: ${getCurrentSessionSeed()}\n` +
                   `Random Elements: ${randomWords.join(", ")}\n` +
                   `Context Elements: ${contextWords.join(", ") || "(none)"}\n\n` +
                   `✨ EMERGENT SENTENCE:\n"${emergentSentence}"\n\n` +
@@ -821,7 +841,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       };
 
       // Save insight state
-      const insightFile = path.join(MEMORY_DIR, `insight-${generatePseudoRandomSeed()}.json`);
+      const insightFile = path.join(MEMORY_DIR, `insight-${generateFileId()}.json`);
       await fs.writeFile(insightFile, JSON.stringify(lastInsight, null, 2), "utf-8");
 
       return {
@@ -841,6 +861,7 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const insightText = args?.insight_text as string | undefined;
       const consultModel = (args?.consult_model as string | undefined) || "kimi-k2-thinking:cloud";
       const preferConsult = args?.prefer_consult !== false;
+      const preferHaiku = args?.prefer_haiku !== false;
 
       const sourceInsight = insightText || (lastInsight ? lastInsight.insights.join("\n") : null);
 
@@ -872,20 +893,39 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           );
           method = `Consulted via Ollama model: ${consultModel}`;
         } catch (error) {
-          // Enhanced fallback with deep analysis
+          // Enhanced fallback with deep analysis + optional haiku
           const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-          ponderingResult = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          const deepAnalysis = generateDeepAnalysis(insightsArray, lastMeditation?.randomWords);
+          
+          if (preferHaiku) {
+            const haiku = generateHaikuSynthesis(insightsArray, lastMeditation?.emergentSentence);
+            ponderingResult = `HAIKU SYNTHESIS\n\n${haiku}\n\n---\n\n${deepAnalysis}`;
+          } else {
+            ponderingResult = deepAnalysis;
+          }
+          
           method = "Internal deep analysis (consultation unavailable)";
         }
       } else {
-        // Internal pondering - more substantive than before
+        // Internal pondering with optional haiku
         const insightsArray = sourceInsight.split("\n").filter(s => s.trim());
-        ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        
+        if (preferHaiku) {
+          ponderingResult = generatePonderingWithHaiku(
+            insightsArray,
+            lastMeditation?.contextWords,
+            lastMeditation?.emergentSentence,
+            true
+          );
+        } else {
+          ponderingResult = generateInternalPondering(insightsArray, lastMeditation?.contextWords);
+        }
+        
         method = "Internal reflection (Ollama not in use)";
       }
 
       // Save pondering result
-      const ponderFile = path.join(MEMORY_DIR, `ponder-${generatePseudoRandomSeed()}.json`);
+      const ponderFile = path.join(MEMORY_DIR, `ponder-${generateFileId()}.json`);
       await fs.writeFile(
         ponderFile,
         JSON.stringify({ sourceInsight, ponderingResult, method, timestamp: new Date().toISOString() }, null, 2),
@@ -897,7 +937,8 @@ export async function callToolHandler(params: { name: string; arguments?: any })
           {
             type: "text",
             text: `🤔 CREATIVE PONDERING\n\n` +
-                  `Method: ${method}\n\n` +
+                  `Method: ${method}\n` +
+                  `Session: ${getCurrentSessionSeed()}\n\n` +
                   `SOURCE INSIGHTS:\n${sourceInsight}\n\n` +
                   `PONDERING:\n${ponderingResult}\n\n` +
                   `(Pondering saved to ${ponderFile})`
