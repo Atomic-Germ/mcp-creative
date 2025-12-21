@@ -1,0 +1,12 @@
+[project]
+name = "fast-creative"
+version = "0.1.0"
+description = "MCP Creative Meditation Server - A contemplative catalyst for AI models"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastmcp>=2.14.1",
+]
+
+[project.scripts]
+fast-creative = "main:main"
