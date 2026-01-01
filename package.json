@@ -1,10 +1,10 @@
 {
-  "name": "mcp-creative",
+  "name": "creative-meditate",
   "version": "1.0.1",
   "description": "MCP server for creative meditation and insight generation",
   "main": "dist/index.js",
-  "bin:": {
-    "mcp-creative": "dist/index.js"
+  "bin": {
+    "creative-meditate": "dist/index.js"
   },
   "scripts": {
     "clean": "rm -rf dist *.tgz",
