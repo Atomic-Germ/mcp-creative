@@ -343,7 +343,7 @@ export function listTools() {
       {
         name: 'creative_meditate',
         description:
-          'Generates random/pseudorandom words mapped loosely with selected context words until a syntactically meaningful sentence emerges, then interprets it. The model receives streams of conceptual fragments that coalesce into emergent meaning.',
+          'Generates random/pseudorandom words mapped loosely with selected context words until a syntactically meaningful sentence emerges, then interprets it. The model receives streams of conceptual fragments that coalesce into emergent meaning. Use for: creative prompts, exploring concept connections, breaking mental blocks. Combine with heritage_condition to blend past insights. See MODEL_GUIDANCE.md for patterns.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -418,7 +418,7 @@ export function listTools() {
       {
         name: 'heritage_seed',
         description:
-          'Ask a model to generate a short sensory vignette or artifact seed for the model-native Heritage Library and save it.',
+          'Ask a model to generate a short sensory vignette or artifact seed for the model-native Heritage Library and save it. Use for: preserving insights, building thematic continuity across sessions, creating context for future meditations. Auto-indexes with default embedding model. Tag thoughtfully for later discovery.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -495,7 +495,7 @@ export function listTools() {
       },
       {
         name: 'heritage_search',
-        description: 'Search the Heritage Library semantically and return the top matches (uses embeddings).',
+        description: 'Search the Heritage Library semantically and return the top matches (uses embeddings). Use for: retrieving past insights before meditation, cross-pollinating ideas, discovering thematic connections. Supports ensemble search with multiple embedding models for robustness. Results include similarity scores.',
         inputSchema: {
           type: 'object',
           properties: {
