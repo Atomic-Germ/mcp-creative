@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Heritage Embedding Explorer</title>
+    <style>
+      body { font-family: system-ui, Arial; margin: 0; }
+      #canvas { width: 100%; height: 90vh; display: block; }
+      .panel { padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <label>Model (single): <input id="model" value="qwen3-embedding:latest" style="width:300px"/></label>
+      <label style="margin-left: 12px;">Models (comma-separated overlay): <input id="models" value="" style="width:300px"/></label>
+      <label style="margin-left: 12px;">Layers: <input id="layers" type="number" value="0" min="0" max="10" style="width:80px"/></label>
+      <button id="refresh">Refresh</button>
+    </div>
+    <canvas id="canvas"></canvas>
+    <script>
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight * 0.85; }
+      window.addEventListener('resize', resize); resize();
+
+      async function fetchPoints() {
+        const modelsInput = document.getElementById('models');
+      const layersInput = document.getElementById('layers');
+      const modelInput = document.getElementById('model');
+
+      async function fetchPoints() {
+        const model = modelInput.value;
+        const models = modelsInput.value;
+        const layers = Number(layersInput.value || 0);
+        let url = '/api/points?';
+        if (models && models.trim().length > 0) {
+          url += `models=${encodeURIComponent(models)}`;
+        } else {
+          url += `model=${encodeURIComponent(model)}`;
+        }
+        const res = await fetch(url);
+        const json = await res.json();
+        return json.points;
+      }
+
+      function draw(points) {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        // color by model if present
+        const colors: { [k: string]: string } = {};
+        let colorIdx = 0;
+        const palette = ['#3b82f6', '#f97316', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f59e0b'];
+        for (const p of points) {
+          const key = p.model || 'default';
+          if (!colors[key]) colors[key] = palette[colorIdx++ % palette.length];
+          const x = (p.x + 1)/2 * canvas.width;
+          const y = (1 - (p.y + 1)/2) * canvas.height;
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI*2);
+          ctx.fillStyle = colors[key];
+          ctx.fill();
+        }
+      }
+
+      document.getElementById('refresh').addEventListener('click', async () => {
+        const pts = await fetchPoints();
+        draw(pts);
+      });
+
+      // initial
+      fetchPoints().then(draw).catch(console.error);
+    </script>
+  </body>
+</html>

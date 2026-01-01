@@ -4,6 +4,9 @@ import path from 'path';
 import { saveArtifact, listArtifacts, queryArtifacts } from './features/heritage/store.js';
 import { generateArtifactFromModel } from './features/heritage/generator.js';
 import { indexArtifacts, semanticSearch } from './features/heritage/embeddings.js';
+import { listStagingEntries, addStagingEntry } from './features/heritage/staging.js';
+import { processStagedEmbeddings } from './features/heritage/processing.js';
+import { startSleepDaemon, stopSleepDaemon, isSleepDaemonRunning, getSleepDaemonConfig } from './features/heritage/daemon.js';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const MEMORY_DIR = process.env.MEMORY_DIR || path.join('/tmp', 'mcp-creative-memory');
@@ -470,8 +473,23 @@ export function listTools() {
         inputSchema: {
           type: 'object',
           properties: {
-            model: { type: ['string', 'array'], description: 'Embedding model to use (optional; may be a string or array of models)' },
+            model: {
+              anyOf: [
+                { type: 'string' },
+                { type: 'array', items: { type: 'string' } },
+              ],
+              description: 'Embedding model to use (optional; may be a string or array of models)',
+            },
           },
+          required: [],
+        },
+      },
+      {
+        name: 'debug_dump_schema',
+        description: 'Debug helper: return the full tool list schema as JSON for inspection',
+        inputSchema: {
+          type: 'object',
+          properties: {},
           required: [],
         },
       },
@@ -483,11 +501,56 @@ export function listTools() {
           properties: {
             text: { type: 'string', description: 'Query text (required)' },
             model: { type: 'string', description: 'Embedding model to prefer (optional)' },
+            models: { type: 'array', items: { type: 'string' }, description: 'Optional ensemble of embedding models to aggregate results' },
+            weights: { type: 'object', description: 'Optional weights map for ensemble aggregation' },
             top_k: { type: 'number', description: 'Number of results to return (default: 5)', default: 5 },
           },
           required: ['text'],
         },
       },
+      {
+        name: 'heritage_process_staging',
+        description: 'Attempt to process and compute embeddings for staged artifact/model pairs (staging created when model embedding was unavailable).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: { type: 'string', description: 'Optional model override to compute embeddings with' },
+            force_fallback: { type: 'boolean', description: 'Whether to force the fallback embedding instead of the staged model', default: false },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_start_sleep',
+        description: 'Start the background processing (sleep-like) daemon to process staged embeddings periodically.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            interval_ms: { type: 'number', description: 'Interval in milliseconds between processing runs (default: 60000)' },
+            model: { type: 'string', description: 'Optional model override to compute embeddings with each run' },
+            force_fallback: { type: 'boolean', description: 'Whether to force the fallback embedding instead of the staged model', default: false },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_stop_sleep',
+        description: 'Stop the background processing daemon (if running).',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_sleep_status',
+        description: 'Get the status and config of the background processing daemon.',
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+      }
     ],
   };
 }
@@ -851,6 +914,60 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       };
     }
 
+    case 'heritage_staging_list': {
+      const entries = await listStagingEntries(MEMORY_DIR);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Staged (${entries.length}):\n${entries.map((e:any) => `${e.artifactId} | ${e.model} | ${e.timestamp}`).join('\n')}`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_record_day': {
+      const transcript = args?.transcript as string;
+      const tags = (args?.tags as string[]) || ['day', 'record'];
+
+      // Create a light-weight vignette from the transcript by extracting short phrases
+      const fragments = transcript
+        .split(/[\.\n]/)
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 6)
+        .slice(0, 5);
+
+      const summary = fragments.length > 0 ? fragments.join(' | ') : transcript.slice(0, 200);
+
+      const artifact = {
+        id: `day-${Date.now()}-${Math.random().toString(36).slice(2,9)}`,
+        model: 'recorded-day',
+        prompt: 'low-res-day',
+        content: [{ type: 'text', data: `LOW-RES DAY TRANSCRIPT: ${summary}` }],
+        tags: Array.from(new Set([...(tags || []), 'day', 'staged'])),
+        metadata: {},
+        createdAt: new Date().toISOString(),
+      } as any;
+
+      await saveArtifact(MEMORY_DIR, artifact);
+
+      // Stage for default embedding model so the sleep daemon or manual processing will pick it up
+      try {
+        await addStagingEntry(MEMORY_DIR, artifact.id, DEFAULT_EMBEDDING_MODEL);
+      } catch (err) {
+        // ignore
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Recorded day artifact saved: id=${artifact.id}, summary=${summary.slice(0, 160)}`,
+          },
+        ],
+      };
+    }
+
     case 'heritage_index': {
       const model = args?.model as string | undefined;
       const updated = await indexArtifacts(MEMORY_DIR, model);
@@ -858,24 +975,95 @@ export async function callToolHandler(params: { name: string; arguments?: any })
         content: [
           {
             type: 'text',
-            text: `Indexed ${updated.length} artifacts with model=${model || 'fallback-hash'}`,
+            text: `Indexed ${updated.length} artifacts with model=${JSON.stringify(model) || 'fallback-hash'}`,
+          },
+        ],
+      };
+    }
+    case 'heritage_process_staging': {
+      const modelOverride = args?.model as string | undefined;
+      const forceFallback = !!args?.force_fallback;
+      const processed = await processStagedEmbeddings(MEMORY_DIR, { force_fallback: forceFallback, model: modelOverride });
+      const succeeded = processed.filter((p: any) => p.success).length;
+      const failed = processed.length - succeeded;
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Processed staging entries: total=${processed.length}, succeeded=${succeeded}, failed=${failed}`,
           },
         ],
       };
     }
 
-    case 'heritage_search': {
-      const text = args?.text as string;
+    case 'heritage_start_sleep': {
+      const intervalMs = (args?.interval_ms as number) || 60_000;
       const model = args?.model as string | undefined;
-      const topK = (args?.top_k as number) || 5;
-      const results = await semanticSearch(MEMORY_DIR, text, topK, model);
+      const forceFallback = !!args?.force_fallback;
+      const cfg = startSleepDaemon(MEMORY_DIR, { intervalMs, model, forceFallback });
       return {
         content: [
           {
             type: 'text',
-            text: `Search results (${results.length}) for "${text}":\n${results
+            text: `Sleep daemon started: interval_ms=${cfg.intervalMs}, model=${cfg.model || 'none'}, force_fallback=${cfg.forceFallback}`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_stop_sleep': {
+      stopSleepDaemon();
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Sleep daemon stopped`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_sleep_status': {
+      const running = isSleepDaemonRunning();
+      const cfg = getSleepDaemonConfig();
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Sleep daemon running=${running}, config=${JSON.stringify(cfg)}`,
+          },
+        ],
+      };
+    }
+    case 'heritage_search': {
+      const text = args?.text as string;
+      const model = args?.model as string | undefined;
+      const models = args?.models as string[] | undefined;
+      const weights = args?.weights as Record<string, number> | undefined;
+      const topK = (args?.top_k as number) || 5;
+
+      // support ensemble lookups via `models` array and optional weights
+      const results = await semanticSearch(MEMORY_DIR, text, topK, model, models, weights);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Search results (${results.length}) for "${text}" (models=${JSON.stringify(models || model)}):\n${results
               .map((r) => `${r.artifact.id} | score=${r.score.toFixed(3)} | ${r.artifact.tags.join(', ')} | ${r.artifact.content[0]?.data?.slice(0, 120)}`)
               .join('\n')}`,
+          },
+        ],
+      };
+    }
+
+    case 'debug_dump_schema': {
+      const schema = listTools();
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(schema, null, 2),
           },
         ],
       };

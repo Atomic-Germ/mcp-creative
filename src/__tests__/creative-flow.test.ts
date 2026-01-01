@@ -137,6 +137,72 @@ describe('creative meditation API', () => {
     expect(medText).toContain('EMERGENT SENTENCE');
     // the context elements should include our manual artifact text
     expect(medText).toContain('ocean');
+
+    // check staging behavior: ask to index with a clearly-nonexistent model and verify staging
+    const idxRes = await client.callTool({ name: 'heritage_index', arguments: { model: ['this-model-does-not-exist-xyz'] } });
+    const idxText = (idxRes.content as any)[0].text as string;
+    expect(idxText).toContain('Indexed');
+
+    const stageList = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
+    const stageText = (stageList.content as any)[0].text as string;
+    expect(stageText).toContain('Staged');
+
+    // process staging entries, forcing fallback embedding so these staged entries get embedded now
+    const proc = await client.callTool({ name: 'heritage_process_staging', arguments: { force_fallback: true } });
+    const procText = (proc.content as any)[0].text as string;
+    expect(procText).toContain('Processed staging entries');
+
+    // staged entries should be cleared
+    const stageListAfter = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
+    const stageTextAfter = (stageListAfter.content as any)[0].text as string;
+    // staged list should now show zero
+    expect(stageTextAfter).toContain('Staged (0');
+
+    // Now verify daemon: start it with a short interval (100ms), create another staged artifact, and ensure daemon clears it.
+    const startRes = await client.callTool({ name: 'heritage_start_sleep', arguments: { interval_ms: 100, force_fallback: true } });
+    expect((startRes.content as any)[0].text).toContain('Sleep daemon started');
+
+    // create another manual artifact to stage
+    const manual2 = {
+      id: 'manual-ocean-2',
+      model: 'manual',
+      prompt: 'manual',
+      content: [{ type: 'text', data: 'oceanic residue of sleep' }],
+      tags: ['ocean', 'manual'],
+      metadata: {},
+      createdAt: new Date().toISOString(),
+    };
+    await (await import('node:fs/promises')).writeFile(join(MEMORY_DIR, 'heritage', `${manual2.id}.json`), JSON.stringify(manual2, null, 2), 'utf-8');
+
+    // index with a fake model to force staging
+    await client.callTool({ name: 'heritage_index', arguments: { model: ['this-model-does-not-exist-xyz'] } });
+
+    // wait a short while for the daemon to run (it runs every 100ms)
+    await new Promise((r) => setTimeout(r, 350));
+
+    // staged entries should be cleared now (daemon should have processed)
+    const stageListAfterDaemon = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
+    const stageTextAfterDaemon = (stageListAfterDaemon.content as any)[0].text as string;
+    expect(stageTextAfterDaemon).toContain('Staged (0');
+
+    // stop daemon
+    const stopRes = await client.callTool({ name: 'heritage_stop_sleep', arguments: {} });
+    expect((stopRes.content as any)[0].text).toContain('Sleep daemon stopped');
+
+    // Test record-day API: create a low-res transcript and make sure it's saved and staged
+    const recordRes = await client.callTool({ name: 'heritage_record_day', arguments: { transcript: 'Woke at dawn. Saw the ocean. Coffee. Strange signal in the attic.' } });
+    const recordText = (recordRes.content as any)[0].text as string;
+    expect(recordText).toContain('Recorded day artifact saved: id=');
+
+    const stageAfterRecord = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
+    const stageAfterRecordText = (stageAfterRecord.content as any)[0].text as string;
+    expect(stageAfterRecordText).toContain('Staged');
+
+    // process the staged entries via the daemon-stop/start to clean up
+    await client.callTool({ name: 'heritage_process_staging', arguments: { force_fallback: true } });
+    const stageAfterProcess = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
+    const stageAfterProcessText = (stageAfterProcess.content as any)[0].text as string;
+    expect(stageAfterProcessText).toContain('Staged (0');
   });
 
   it('indexes artifacts (fallback) and runs semantic search', async () => {

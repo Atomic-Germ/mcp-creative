@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Artifact } from './types';
 import fs from 'fs/promises';
 import path from 'path';
+import { addStagingEntry } from './staging.js';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 
@@ -56,6 +57,7 @@ export function cosine(a: number[], b: number[]) {
 }
 
 export async function indexArtifacts(baseDir: string, model?: string | string[]) {
+  // helper: if a single string model is provided, wrap; if array, pass through
   const heritageDir = path.join(baseDir, 'heritage');
   await fs.mkdir(heritageDir, { recursive: true });
   const files = await fs.readdir(heritageDir);
@@ -86,10 +88,14 @@ export async function indexArtifacts(baseDir: string, model?: string | string[])
     } else {
       for (const m of models) {
         try {
+          // Attempt model embedding; if Ollama is available this should return a model embedding,
+          // otherwise embedText falls back to a deterministic hash embedding to preserve shape.
           const emb = await embedText(m, text);
+          // store per-model embedding (will be fallback hash if model unavailable)
           art.metadata.embeddings[m] = emb;
         } catch (err) {
-          // ignore individual model failures
+          // on exception, stage the embedding request (rare)
+          await addStagingEntry(baseDir, art.id, m);
         }
       }
       art.metadata.embeddingModels = Object.keys(art.metadata.embeddings || {});
@@ -102,7 +108,57 @@ export async function indexArtifacts(baseDir: string, model?: string | string[])
   return updated;
 }
 
-export async function semanticSearch(baseDir: string, query: string, topK = 5, model?: string) {
+export async function semanticSearch(baseDir: string, query: string, topK = 5, model?: string, models?: string[], weights?: Record<string, number>) {
+  // If an explicit ensemble `models` list is provided, compute per-model scores and aggregate using z-score normalization and optional weights.
+  if (Array.isArray(models) && models.length > 0) {
+    const perModelResults: { [model: string]: { artifact: Artifact; score: number }[] } = {};
+    for (const m of models) {
+      const res = await semanticSearch(baseDir, query, topK * 3, m); // gather wider set per model
+      perModelResults[m] = res;
+    }
+
+    // collect scores per artifact per model
+    const scoresByModel: Record<string, number[]> = {};
+    const allArtifactsMap: Record<string, Artifact> = {};
+    for (const m of Object.keys(perModelResults)) {
+      scoresByModel[m] = [];
+      for (const r of perModelResults[m]) {
+        allArtifactsMap[r.artifact.id] = r.artifact;
+        scoresByModel[m].push(r.score);
+      }
+    }
+
+    // compute z-score normalization per model
+    const zScoresByModel: Record<string, Record<string, number>> = {};
+    for (const m of Object.keys(perModelResults)) {
+      const arr = perModelResults[m].map((r) => r.score);
+      const mean = arr.reduce((a, b) => a + b, 0) / (arr.length || 1);
+      const sd = Math.sqrt(arr.reduce((a, b) => a + (b - mean) ** 2, 0) / (arr.length || 1)) || 1;
+      zScoresByModel[m] = {};
+      for (const r of perModelResults[m]) {
+        zScoresByModel[m][r.artifact.id] = (r.score - mean) / sd;
+      }
+    }
+
+    // aggregate: for every artifact seen anywhere, average z-scores (weighted)
+    const agg: Record<string, { artifact: Artifact; scores: number[] }> = {};
+    for (const m of Object.keys(perModelResults)) {
+      const weight = (weights && weights[m]) || 1;
+      for (const r of perModelResults[m]) {
+        if (!agg[r.artifact.id]) agg[r.artifact.id] = { artifact: r.artifact, scores: [] };
+        agg[r.artifact.id].scores.push((zScoresByModel[m][r.artifact.id] || 0) * weight);
+      }
+    }
+
+    const final = Object.values(agg)
+      .map((v) => ({ artifact: v.artifact, score: v.scores.reduce((a, b) => a + b, 0) / v.scores.length }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+
+    return final;
+  }
+
+  // default (single-model or fallback) behavior
   const qemb = await embedText(model, query);
   const heritageDir = path.join(baseDir, 'heritage');
   try {
