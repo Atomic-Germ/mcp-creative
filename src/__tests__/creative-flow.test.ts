@@ -76,4 +76,79 @@ describe('creative meditation API', () => {
     expect(savedFiles.some((file) => file.startsWith('insight-'))).toBe(true);
     expect(savedFiles.some((file) => file.startsWith('ponder-'))).toBe(true);
   }, 60_000);
+
+  it('seeds heritage artifact (fallback) and lists it', async () => {
+    const seedResult = await client.callTool({
+      name: 'heritage_seed',
+      arguments: {
+        prompt: 'A small vignette about an ocean of circuits',
+        tags: ['oceanic', 'seed-test'],
+      },
+    });
+
+    const seedText = (seedResult.content as any)[0].text as string;
+    expect(seedText).toContain('Artifact saved: id=');
+
+    const listResult = await client.callTool({ name: 'heritage_list', arguments: {} });
+    const listText = (listResult.content as any)[0].text as string;
+    expect(listText).toContain('Heritage artifacts');
+
+    // ensure file exists in the heritage directory
+    const files = await readdir(MEMORY_DIR);
+    const heritageDir = files.find((f) => f === 'heritage');
+    expect(heritageDir).toBeDefined();
+
+    // the seed call auto-indexes; read the artifact and confirm embedding exists
+    const heritageFiles = await readdir(join(MEMORY_DIR, 'heritage'));
+    expect(heritageFiles.length).toBeGreaterThan(0);
+    const sample = heritageFiles.find((f) => f.endsWith('.json'))!;
+    const raw = await (await import('node:fs/promises')).readFile(join(MEMORY_DIR, 'heritage', sample), 'utf-8');
+    const art = JSON.parse(raw as string) as any;
+    expect(art.metadata).toBeDefined();
+    // legacy single embedding or embeddings map must exist
+    expect(art.metadata.embedding || art.metadata.embeddings).toBeDefined();
+
+    // write a manual artifact containing 'ocean' to exercise conditioning
+    const manual = {
+      id: 'manual-ocean',
+      model: 'manual',
+      prompt: 'manual',
+      content: [{ type: 'text', data: 'ocean of circuits and lenses' }],
+      tags: ['ocean', 'manual'],
+      metadata: {},
+      createdAt: new Date().toISOString(),
+    };
+    const { writeFile } = await import('node:fs/promises');
+    await writeFile(join(MEMORY_DIR, 'heritage', `${manual.id}.json`), JSON.stringify(manual, null, 2), 'utf-8');
+
+    // index and then run conditioned meditation
+    await client.callTool({ name: 'heritage_index', arguments: {} });
+
+    const medResult = await client.callTool({
+      name: 'creative_meditate',
+      arguments: {
+        heritage_condition: { text: 'ocean', top_k: 2 },
+        num_random_words: 4,
+        seed: 'conditioning-seed',
+      },
+    });
+
+    const medText = (medResult.content as any)[0].text as string;
+    expect(medText).toContain('EMERGENT SENTENCE');
+    // the context elements should include our manual artifact text
+    expect(medText).toContain('ocean');
+  });
+
+  it('indexes artifacts (fallback) and runs semantic search', async () => {
+    const idx = await client.callTool({ name: 'heritage_index', arguments: {} });
+    const idxText = (idx.content as any)[0].text as string;
+    expect(idxText).toContain('Indexed');
+
+    const search = await client.callTool({ name: 'heritage_search', arguments: { text: 'ocean', top_k: 3 } });
+    const searchText = (search.content as any)[0].text as string;
+    expect(searchText).toContain('Search results');
+    // There should be at least one result line following the header
+    const lines = searchText.split('\n');
+    expect(lines.length).toBeGreaterThan(1);
+  });
 });

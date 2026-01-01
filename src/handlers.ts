@@ -1,9 +1,16 @@
 import axios from 'axios';
 import fs from 'fs/promises';
 import path from 'path';
+import { saveArtifact, listArtifacts, queryArtifacts } from './features/heritage/store.js';
+import { generateArtifactFromModel } from './features/heritage/generator.js';
+import { indexArtifacts, semanticSearch } from './features/heritage/embeddings.js';
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
 const MEMORY_DIR = process.env.MEMORY_DIR || path.join('/tmp', 'mcp-creative-memory');
+
+// Default embedding model to use for semantic indexing/search when available.
+// You can override this at runtime with the env var DEFAULT_EMBEDDING_MODEL
+const DEFAULT_EMBEDDING_MODEL = process.env.DEFAULT_EMBEDDING_MODEL || 'qwen3-embedding:latest';
 
 axios.defaults.timeout = axios.defaults.timeout || 60_000;
 
@@ -284,6 +291,14 @@ function generatePseudoRandomSeed(): string {
   return `${timestamp}-${random}`;
 }
 
+// Optional heritage conditioning argument shape for creative_meditate
+interface HeritageCondition {
+  text?: string;
+  model?: string;
+  top_k?: number;
+  tags?: string[];
+}
+
 function attemptSentenceFormation(randomWords: string[], contextWords: string[]): string | null {
   const allWords = [...randomWords, ...contextWords];
   if (allWords.length === 0) return null;
@@ -343,6 +358,16 @@ export function listTools() {
               type: 'string',
               description: 'Optional seed for pseudorandom generation',
             },
+            heritage_condition: {
+              type: 'object',
+              properties: {
+                text: { type: 'string', description: 'Free text query for heritage search (optional)' },
+                model: { type: 'string', description: 'Embedding model to use for heritage search (optional)' },
+                top_k: { type: 'number', description: 'Number of artifacts to retrieve and include (default: 3)', default: 3 },
+                tags: { type: 'array', items: { type: 'string' }, description: 'Tags to filter by when searching (optional)' },
+              },
+              required: [],
+            },
           },
           required: [],
         },
@@ -387,6 +412,82 @@ export function listTools() {
           required: [],
         },
       },
+      {
+        name: 'heritage_seed',
+        description:
+          'Ask a model to generate a short sensory vignette or artifact seed for the model-native Heritage Library and save it.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: {
+              type: 'string',
+              description: 'Ollama model to use (optional; will fallback to internal generator)',
+            },
+            prompt: { type: 'string', description: 'Prompt to give the model (optional)' },
+            system: { type: 'string', description: 'Optional system prompt for the model' },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Tags to attach to the artifact (optional)',
+            },
+            index_models: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional list of embedding models to compute and store for this artifact',
+            },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_list',
+        description: 'List artifacts stored in the Heritage Library (by default lists all).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: { type: 'string', description: 'Filter by originating model (optional)' },
+            tag: { type: 'string', description: 'Filter by tag (optional)' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_query',
+        description:
+          'Query the Heritage Library with a simple tag or text search (basic semantic search placeholder).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'Free text query (optional)' },
+            tag: { type: 'string', description: 'Tag filter (optional)' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_index',
+        description: 'Compute and store embeddings for artifacts in the Heritage Library (optionally specify an embedding model).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            model: { type: ['string', 'array'], description: 'Embedding model to use (optional; may be a string or array of models)' },
+          },
+          required: [],
+        },
+      },
+      {
+        name: 'heritage_search',
+        description: 'Search the Heritage Library semantically and return the top matches (uses embeddings).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: 'Query text (required)' },
+            model: { type: 'string', description: 'Embedding model to prefer (optional)' },
+            top_k: { type: 'number', description: 'Number of results to return (default: 5)', default: 5 },
+          },
+          required: ['text'],
+        },
+      },
     ],
   };
 }
@@ -429,6 +530,20 @@ export async function callToolHandler(params: { name: string; arguments?: any })
       const seed = args?.seed as string | undefined;
       const randomFn = seed ? createSeededRandom(seed) : Math.random;
       const randomWords = generateRandomWords(numRandomWords, randomFn);
+
+      // optional heritage conditioning: query heritage artifacts and include their content as extra context
+      const heritageCondition = args?.heritage_condition as HeritageCondition | undefined;
+      if (heritageCondition && (heritageCondition.text || (heritageCondition.tags && heritageCondition.tags.length > 0))) {
+        const searchModel = heritageCondition.model || DEFAULT_EMBEDDING_MODEL;
+        const topK = heritageCondition.top_k || 3;
+        const q = heritageCondition.text || '';
+        const results = await semanticSearch(MEMORY_DIR, q, topK, searchModel);
+        // include the top artifacts' text in the context words so they can bias the emergent sentence
+        for (const r of results) {
+          const artText = (r.artifact.content || []).map((c) => c.data).join(' | ');
+          contextWords.push(artText);
+        }
+      }
 
       // Attempt to form a meaningful sentence
       let emergentSentence: string | null = null;
@@ -640,6 +755,127 @@ export async function callToolHandler(params: { name: string; arguments?: any })
               `SOURCE INSIGHTS:\n${sourceInsight}\n\n` +
               `PONDERING:\n${ponderingResult}\n\n` +
               `(Pondering saved to ${ponderFile})`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_seed': {
+      const model = args?.model as string | undefined;
+      const prompt = args?.prompt as string | undefined;
+      const system = args?.system as string | undefined;
+      const tags = (args?.tags as string[]) || ['seed', 'model-generated'];
+
+      const artifact = await generateArtifactFromModel({ model, prompt, systemPrompt: system });
+      artifact.tags = Array.from(new Set([...(artifact.tags || []), ...(tags || [])]));
+      await saveArtifact(MEMORY_DIR, artifact);
+
+      // Auto-index the heritage library using the default embedding model to preserve the "model-native" shape
+      try {
+        // index default model first
+        await indexArtifacts(MEMORY_DIR, DEFAULT_EMBEDDING_MODEL);
+
+        // if caller requested additional models specifically for this seed, index them as well
+        const indexModels = (args?.index_models as string[] | undefined) || undefined;
+        if (Array.isArray(indexModels) && indexModels.length > 0) {
+          await indexArtifacts(MEMORY_DIR, indexModels);
+        }
+      } catch (err) {
+        // non-fatal: indexing failure shouldn't break seed
+        console.error('heritage_index failed during seed:', err);
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Artifact saved: id=${artifact.id}, model=${artifact.model || 'internal-fallback'}, tags=${artifact.tags.join(', ')} (indexed with ${DEFAULT_EMBEDDING_MODEL})`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_list': {
+      const filterModel = args?.model as string | undefined;
+      const tag = args?.tag as string | undefined;
+      const artifacts = await listArtifacts(MEMORY_DIR);
+      const filtered = artifacts.filter((a) => {
+        if (filterModel && a.model !== filterModel) return false;
+        if (tag && !a.tags.includes(tag)) return false;
+        return true;
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Heritage artifacts (${filtered.length}):\n${filtered
+              .map(
+                (a) =>
+                  `${a.id} | ${a.model || 'internal'} | ${a.tags.join(', ')} | ${a.content[0]?.data?.slice(0, 120)}`
+              )
+              .join('\n')}`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_query': {
+      const text = args?.text as string | undefined;
+      const tag = args?.tag as string | undefined;
+      const all = await listArtifacts(MEMORY_DIR);
+      const results = all.filter((a) => {
+        if (tag && !a.tags.includes(tag)) return false;
+        if (text) {
+          const hay = (a.content || [])
+            .map((c) => c.data)
+            .join('\n')
+            .toLowerCase();
+          if (!hay.includes(text.toLowerCase())) return false;
+        }
+        return true;
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Query results (${results.length}):\n${results
+              .slice(0, 30)
+              .map(
+                (a) => `${a.id} | ${a.model || 'internal'} | ${a.tags.join(', ')} | ${a.createdAt}`
+              )
+              .join('\n')}`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_index': {
+      const model = args?.model as string | undefined;
+      const updated = await indexArtifacts(MEMORY_DIR, model);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Indexed ${updated.length} artifacts with model=${model || 'fallback-hash'}`,
+          },
+        ],
+      };
+    }
+
+    case 'heritage_search': {
+      const text = args?.text as string;
+      const model = args?.model as string | undefined;
+      const topK = (args?.top_k as number) || 5;
+      const results = await semanticSearch(MEMORY_DIR, text, topK, model);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Search results (${results.length}) for "${text}":\n${results
+              .map((r) => `${r.artifact.id} | score=${r.score.toFixed(3)} | ${r.artifact.tags.join(', ')} | ${r.artifact.content[0]?.data?.slice(0, 120)}`)
+              .join('\n')}`,
           },
         ],
       };

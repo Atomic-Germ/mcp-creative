@@ -66,6 +66,23 @@ async function runDemo() {
     console.log((ponderResult.content as any)[0].text);
     console.log('\n' + '='.repeat(80) + '\n');
 
+    // Step 4: Seed a heritage artifact (fallback generator used if no Ollama model specified)
+    console.log('🏺 Step 4: Seeding a Heritage artifact (model-native)');
+    const seedResult = await client.callTool({
+      name: 'heritage_seed',
+      arguments: { prompt: 'A short sensory vignette about a memory made of lenses', tags: ['lens', 'demo'] },
+    });
+    console.log((seedResult.content as any)[0].text);
+
+    console.log('\n' + '='.repeat(40) + '\n');
+
+    // Step 5: List heritage artifacts
+    console.log('🔎 Step 5: Listing Heritage artifacts');
+    const listResult = await client.callTool({ name: 'heritage_list', arguments: {} });
+    console.log((listResult.content as any)[0].text);
+
+    console.log('\n' + '='.repeat(80) + '\n');
+
     console.log('✨ Demo complete! Check /tmp/mcp-creative-memory for saved states.');
   } catch (error) {
     console.error('Error during demo:', error);
