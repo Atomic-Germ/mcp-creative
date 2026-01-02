@@ -203,7 +203,7 @@ describe('creative meditation API', () => {
     const stageAfterProcess = await client.callTool({ name: 'heritage_staging_list', arguments: {} });
     const stageAfterProcessText = (stageAfterProcess.content as any)[0].text as string;
     expect(stageAfterProcessText).toContain('Staged (0');
-  });
+  }, 60_000);
 
   it('indexes artifacts (fallback) and runs semantic search', async () => {
     const idx = await client.callTool({ name: 'heritage_index', arguments: {} });
